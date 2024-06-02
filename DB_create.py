@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def create_database():
     # Подключение к базе данных (создание файла базы данных)
     conn = sqlite3.connect('EasyEats.db')
@@ -27,12 +28,12 @@ def create_database():
         """
         CREATE TABLE menu(
             dish_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            catgory_id INT NOT NULL,
+            category_id INT NOT NULL,
             dish_name VARCHAR(255) NOT NULL,
             description VARCHAR(255) NOT NULL,
             price DECIMAL(8, 2) NOT NULL,
             image_url VARCHAR(255),
-            FOREIGN KEY (catgory_id) REFERENCES catgory(catgory_id)
+            FOREIGN KEY (category_id) REFERENCES category(category_id)
         );
         """,
         """
