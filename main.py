@@ -3,10 +3,9 @@ from telebot import types
 
 basket = 0
 
-
 def start_markup():
     """Creates and returns the initial reply keyboard markup for the bot."""
-    markup = types.ReplyKeyboardMarkup(row_width=3, resize_keyboard=True, one_time_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
     markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
                '\U0001F6F5 Посмотреть статус заказа')
     return markup
