@@ -3,8 +3,15 @@ import telebot
 import handlers
 
 
-
 bot = telebot.TeleBot('YOUR_TOKEN_HERE')
+
+commands = [
+    telebot.types.BotCommand('/start', 'Запустить бота'),
+    telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
+    telebot.types.BotCommand('/support', 'Обратиться в поддержку')
+]
+
+bot.set_my_commands(commands)
 
 
 @bot.message_handler(commands=['start'])
