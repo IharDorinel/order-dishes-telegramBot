@@ -3,7 +3,7 @@ import telebot
 import handlers
 
 
-bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
+bot = telebot.TeleBot('Your_Token_Here')
 
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
