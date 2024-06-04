@@ -44,14 +44,7 @@ def process_payment(user_id, order_id, card_number, exp_month, exp_year, cvc, am
         # Обработка других ошибок
         return {"status": "error", "message": "An error occurred. Please try again later."}
 
-# Пример использования функции
-user_id = 1
-order_id = 12345
-card_number = '4242424242424242'
-exp_month = 12
-exp_year = 2024
-cvc = '123'
-amount = 1000  # 1000 копеек = 10 рублей
+
 
 result = process_payment(user_id, order_id, card_number, exp_month, exp_year, cvc, amount)
 print(result)
