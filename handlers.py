@@ -79,7 +79,10 @@ def start_perform_actions(message, bot):
 
 def category_selected(message, bot):
     if message.text == 'Назад в основное меню':
-        start_perform_actions(message, bot)
+        msg = bot.send_message(
+            message.chat.id,
+            reply_markup=start_message(message, bot)
+        )
     else:
         category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
         msg = bot.send_message(
