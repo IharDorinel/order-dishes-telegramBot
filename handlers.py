@@ -32,14 +32,14 @@ def support_message(message, bot):
 
 
 def category_markup():
-    """Creates and returns the initial reply keyboard markup for the bot."""
-    markup = types.ReplyKeyboardMarkup(row_width=3, resize_keyboard=True, one_time_keyboard=True)
-    # Загружаем список категорий из БД
-    categories_list = menu.categories()
-    # Создаем кнопки
-    buttons = [(f"{emoji} {name}") for emoji, name in categories_list]
-    markup.add(*buttons)
+    """Creates and returns the inline keyboard markup with categories."""
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    categories = menu.categories()
+    for emoji, name in categories:
+        markup.add(types.KeyboardButton(f'{emoji} {name}'))
+    markup.add(types.KeyboardButton('Назад в основное меню'))  # Добавляем кнопку "Назад в основное меню"
     return markup
+
 
 
 def items_markup(category_name):
@@ -78,14 +78,18 @@ def start_perform_actions(message, bot):
 
 
 def category_selected(message, bot):
-    category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
-    msg = bot.send_message(
-        message.chat.id,
-        f'Вы выбрали категорию: {category_name}. Выберите блюдо:',
-        reply_markup=items_markup(category_name)
-    )
-    # Здесь можно зарегистрировать следующий шаг, если требуется дополнительная обработка
-    bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+    if message.text == 'Назад в основное меню':
+        start_perform_actions(message, bot)
+    else:
+        category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
+        msg = bot.send_message(
+            message.chat.id,
+            f'Вы выбрали категорию: {category_name}. Выберите блюдо:',
+            reply_markup=items_markup(category_name)
+        )
+        # Здесь можно зарегистрировать следующий шаг, если требуется дополнительная обработка
+        bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+
 
 
 def dish_selected(message, bot):

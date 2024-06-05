@@ -5,6 +5,7 @@ import handlers
 
 bot = telebot.TeleBot('Your_Token_Here')
 
+
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
