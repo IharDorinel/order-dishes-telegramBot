@@ -85,6 +85,11 @@ def start_perform_actions(message, bot):
         bot.send_message(message.chat.id, 'Функция корзина')
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
         bot.send_message(message.chat.id, 'Функция статус заказа')
+    elif message.text == '/feedback':
+        feedback_message(message, bot)
+    elif message.text == '/support':
+        support_message(message, bot)
+
 
 
 def category_selected(message, bot):

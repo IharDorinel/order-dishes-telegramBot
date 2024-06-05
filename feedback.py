@@ -1,6 +1,7 @@
 from database import menu
 from telebot import types
-
+import handlers
+from database import DBfeedback
 
 def choose_category(message, bot):
     category = message.text
@@ -62,10 +63,7 @@ def save_feedback(message, bot, dish_id=None):
     user = message.from_user
     user_id = user.id
 
-    add_feedback(user_id, dish_id, feedback_text)
+    DBfeedback.add_feedback(user_id, dish_id, feedback_text)
 
-    bot.send_message(user_id, 'Спасибо за ваш отзыв! Мы ценим ваше мнение.')
-
-def add_feedback(user_id, dish_id, feedback_text):
-    print(user_id, dish_id, feedback_text)
-    pass
+    bot.send_message(user_id, 'Спасибо за ваш отзыв! Мы ценим ваше мнение.', reply_markup=handlers.start_markup())
+    bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
