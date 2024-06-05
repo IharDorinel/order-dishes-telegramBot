@@ -16,7 +16,7 @@ def start_markup():
 def feedback_markup():
     """Creates and returns the reply keyboard markup for feedback categories."""
     markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
-    markup.add('О сервисах рестарана', 'О блюдах')
+    markup.add('О сервисе ресторана', 'О блюдах')
     return markup
 
 

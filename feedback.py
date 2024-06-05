@@ -6,7 +6,7 @@ def choose_category(message, bot):
     category = message.text
     print(category)
 
-    if category == 'О сервисах рестарана':
+    if category == 'О сервисе ресторана':
         msg = bot.send_message(message.chat.id, f'Пожалуйста, напишите ваш отзыв {category.lower()}.')
         msg = bot.send_message(message.chat.id, 'Вы можете написать о доставке, работе поддержки и общие впечатления\n '
                                                 'Ваше мнение важно для нас.')
