@@ -1,6 +1,7 @@
 # Функции-обработчики для команд и нажатия кнопок
 from database import menu
 from telebot import types
+import feedback as fb
 
 basket = 0
 
@@ -10,6 +11,12 @@ def start_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
     markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
                '\U0001F6F5 Посмотреть статус заказа')
+    return markup
+
+def feedback_markup():
+    """Creates and returns the reply keyboard markup for feedback categories."""
+    markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
+    markup.add('О сервисах рестарана', 'О блюдах')
     return markup
 
 
@@ -22,8 +29,11 @@ def start_message(message, bot):
 
 
 def feedback_message(message, bot):
-    msg = bot.send_message(message.chat.id,
-                           f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе.')
+    bot.send_message(
+        message.chat.id,
+        f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
+        reply_markup=feedback_markup())
+    bot.register_next_step_handler(message, lambda m:fb.choose_category(m, bot))
 
 
 def support_message(message, bot):

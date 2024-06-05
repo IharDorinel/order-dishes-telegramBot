@@ -1,5 +1,5 @@
 import telebot
-
+import feedback as fb
 import handlers
 
 
@@ -27,6 +27,15 @@ def start_message(message):
 @bot.message_handler(commands=['support'])
 def start_message(message):
     handlers.support_message(message, bot)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('category:'))
+def choose_dish_category(call):
+    fb.dish_category(call, bot)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('dish:'))
+def choose_dish(call):
+    fb.fb_dish_selected(call, bot)
+
 
 
 bot.polling(none_stop=True)
