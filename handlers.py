@@ -134,34 +134,3 @@ def dish_selected(message, bot):
                     reply_markup=dish_markup(dish_id)
                 )
         bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
-
-def add_to_order(message, dish_id):
-    try:
-        chat_id = message.chat.id
-        print('add_to_order', dish_id)
-        print('message', message.chat.id)
-
-        # Отправка простого сообщения через requests
-        url = f"https://api.telegram.org/bot{'7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48'}/sendMessage"
-        payload = {
-            'chat_id': message.chat.id,
-            'text': 'Введите количество быстро:'
-        }
-        response = requests.post(url, data=payload)
-        print(response.json())
-
-        # bot.send_message(chat_id, 'Функция корзина')
-
-    except Exception as e:
-        print(f'Ошибка в add_to_order: {e}')
-
-    bot.register_next_step_handler(message, lambda msg: process_amount(msg, dish_id))
-
-
-def process_amount(message, dish_id):
-    print('process_amount')
-    try:
-        amount = int(message.text)
-        bot.send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
-    except ValueError:
-        bot.send_message(message.chat.id, "Пожалуйста, введите корректное количество.")

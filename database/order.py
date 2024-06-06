@@ -68,23 +68,16 @@ def show_menu(message):
                        caption=f"{dish_name}\n{description}\nЦена: {price} руб.\n/dish_{dish_id}")
 
 
-
-# Обработчик добавления блюда в заказ
-# def add_to_order(message, dish_id):
-#     bot.send_message(message.chat.id, "Введите количество:")
-#     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
-#
 # # Обработчик добавления блюда в заказ
 # @bot.message_handler(func=lambda message: message.text.startswith('/dish_'))
+# def add_to_order(message, dish_id):
+#     dish_id = int(message.text.split('_')[1])
+#     bot.send_message(message.chat.id, "Введите количество:")
+#     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
+
 def add_to_order(message, dish_id):
-    # dish_id = int(message.text.split('_')[1])
-    print('add_to_order', dish_id)
-    print('message', message.chat.id)
-
-    bot.send_message(message.chat.id, 'Функция корзина')
-    # bot.send_message(message.chat.id, "Введите количество:")
-    # bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
-
+    bot.send_message(message.chat.id, "Введите количество:")
+    bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
 
 def process_amount(message, dish_id):
     try:
