@@ -3,58 +3,100 @@ from database import menu
 from telebot import types
 import feedback as fb
 
+# Глобальная переменная для хранения количества товаров в корзине
 basket = 0
 
 
+def start_message(message, bot):
+    """
+    Отправляет приветственное сообщение пользователю и предлагает выбрать дальнейшее действие.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    msg = bot.send_message(
+        message.chat.id,
+        f'Здравствуйте, {message.from_user.first_name}! Я чат-бот, который поможет тебе сделать заказ еды.',
+        reply_markup=start_markup()
+    )
+    # Регистрируем обработчик следующего шага
+    bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
+
+def feedback_message(message, bot):
+    """
+    Отправляет сообщение с предложением оставить отзыв.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    bot.send_message(
+        message.chat.id,
+        f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
+        reply_markup=feedback_markup()
+    )
+    # Регистрируем обработчик следующего шага
+    bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
+
+
+def support_message(message, bot):
+    """
+    Отправляет сообщение с предложением обратиться в поддержку.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    bot.send_message(
+        message.chat.id,
+        f'Здравствуйте, {message.from_user.first_name}! Здесь вы можете обратиться за поддержкой.'
+    )
+
+
+def feedback_markup():
+    """
+    Создает и возвращает разметку клавиатуры для выбора категории обратной связи.
+
+    :return: объект ReplyKeyboardMarkup
+    """
+    markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
+    markup.add('О сервисе ресторана', 'О блюдах')
+    return markup
+
+
 def start_markup():
-    """Creates and returns the initial reply keyboard markup for the bot."""
+    """
+    Создает и возвращает разметку клавиатуры для начального меню.
+
+    :return: объект ReplyKeyboardMarkup
+    """
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
     markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
                '\U0001F6F5 Посмотреть статус заказа')
     return markup
 
 
-def feedback_markup():
-    """Creates and returns the reply keyboard markup for feedback categories."""
-    markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
-    markup.add('О сервисе ресторана', 'О блюдах')
-    return markup
-
-
-def start_message(message, bot):
-    msg = bot.send_message(message.chat.id,
-                           f'Здравствуйте, {message.from_user.first_name}! Я чат-бот, который поможет тебе сделать заказ еды.',
-                           reply_markup=start_markup())
-
-    bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
-
-
-def feedback_message(message, bot):
-    bot.send_message(
-        message.chat.id,
-        f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
-        reply_markup=feedback_markup())
-    bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
-
-
-def support_message(message, bot):
-    msg = bot.send_message(message.chat.id,
-                           f'Здравствуйте, {message.from_user.first_name}! Здесь вы можете обратиться за поддержкой.')
-
-
 def category_markup():
-    """Creates and returns the inline keyboard markup with categories."""
+    """
+    Создает и возвращает разметку клавиатуры с категориями меню.
+
+    :return: объект ReplyKeyboardMarkup
+    """
     categories = menu.categories()
     markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
-    button = [f'{emoji} {name}' for emoji, name in categories]
+    buttons = [f'{emoji} {name}' for emoji, name in categories]
     button1 = types.KeyboardButton('Назад в основное меню')
-    markup.add(*button)
+    markup.add(*buttons)
     markup.add(button1)  # Добавляем кнопку "Назад в основное меню"
     return markup
 
 
 def items_markup(category_name):
-    """Creates and returns the reply keyboard markup with items for the given category."""
+    """
+    Создает и возвращает разметку клавиатуры с элементами меню для выбранной категории.
+
+    :param category_name: название категории
+    :return: объект ReplyKeyboardMarkup
+    """
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=False)
     # Загружаем список блюд из выбранной категории
     items_list = menu.items_by_category(category_name)  # Предполагается, что такая функция существует в menu
@@ -67,7 +109,11 @@ def items_markup(category_name):
 
 
 def dish_markup():
-    """Creates and returns the inline keyboard markup with options for a dish."""
+    """
+    Создает и возвращает разметку клавиатуры с опциями для выбранного блюда.
+
+    :return: объект InlineKeyboardMarkup
+    """
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data='add_to_cart'))
     markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data='read_review'))
@@ -75,15 +121,28 @@ def dish_markup():
 
 
 def command_message(message, bot):
-    if message.text == '/feedback':
-        feedback_message(message, bot)
-    elif message.text == '/support':
-        support_message(message, bot)
-    elif message.text == '/start':
-        start_message(message, bot)
+    """
+    Обрабатывает команды пользователя и вызывает соответствующие функции.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    commands = {
+        '/feedback': feedback_message,
+        '/support': support_message,
+        '/start': start_message
+    }
+    if message.text in commands:
+        commands[message.text](message, bot)
 
 
 def start_perform_actions(message, bot):
+    """
+    Обрабатывает действия пользователя, выбранные в начальном меню.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
     if message.text == '📋 Посмотреть меню':
         msg = bot.send_message(
             message.chat.id,
@@ -100,22 +159,62 @@ def start_perform_actions(message, bot):
 
 
 def category_selected(message, bot):
-    if message.text == 'Назад в основное меню':
-        msg = bot.send_message(message.chat.id, 'Выберите дальнейшее действие:', reply_markup=start_markup())
-        bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+    """
+    Обрабатывает выбор категории пользователем.
 
-    else:
-        category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
-        msg = bot.send_message(
-            message.chat.id,
-            f'Вы выбрали категорию: {category_name}. Выберите блюдо:',
-            reply_markup=items_markup(category_name)
-        )
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    try:
+        if message.text == 'Назад в основное меню':
+            msg = bot.send_message(message.chat.id, 'Выберите дальнейшее действие:', reply_markup=start_markup())
+            bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+        else:
+            category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
+            msg = bot.send_message(
+                message.chat.id,
+                f'Вы выбрали категорию: {category_name}. Выберите блюдо:',
+                reply_markup=items_markup(category_name)
+            )
+            bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+    except (IndexError, ValueError):
+        if message.text in ['/start', '/feedback', '/support']:
+            command_message(message, bot)
+        else:
+            bot.send_message(message.chat.id, 'Ошибка ввода.', reply_markup=start_markup())
+            bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
-        bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
 
+class BotMessageManager:
+    def __init__(self):
+        self.user_messages = {}
+
+    def add_message(self, user_id, message_id):
+        if user_id not in self.user_messages:
+            self.user_messages[user_id] = []
+        self.user_messages[user_id].append(message_id)
+
+    def clear_previous_buttons(self, bot, chat_id, user_id):
+        if user_id in self.user_messages:
+            for message_id in self.user_messages[user_id]:
+                try:
+                    bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
+                except Exception as e:
+                    print(f"Error editing message reply markup: {e}")
+            self.user_messages[user_id] = []
+
+# Создаем экземпляр класса BotMessageManager
+message_manager = BotMessageManager()
 
 def dish_selected(message, bot):
+    """
+    Обрабатывает выбор блюда пользователем.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    user_id = message.from_user.id
+
     if message.text == 'Назад в категории':
         msg = bot.send_message(
             message.chat.id,
@@ -124,19 +223,35 @@ def dish_selected(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
 
-    else:
+    elif message.text in ['/start', '/feedback', '/support']:
+        command_message(message, bot)
 
+    else:
         dish_name = message.text
         details = menu.dish_details(dish_name)
-
         if details:
             description, price, image_url = details
             caption = f"{dish_name}\n\n{description}\n\nЦена: {price} руб."
+
+            # Удаляем inline кнопки из предыдущих сообщений
+            message_manager.clear_previous_buttons(bot, message.chat.id, user_id)
+
+            # Отправляем новое сообщение с фото
             with open(image_url, 'rb') as photo:
-                bot.send_photo(
+                msg = bot.send_photo(
                     message.chat.id,
                     photo=photo,
                     caption=caption,
                     reply_markup=dish_markup()
                 )
-        bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+
+            # Сохраняем id отправленного сообщения для последующего редактирования
+            message_manager.add_message(user_id, msg.message_id)
+            bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+        else:
+            # В случае отсутствия информации о блюде, возвращаем сообщение об ошибке
+            msg = bot.send_message(
+                message.chat.id,
+                "Извините, информация о данном блюде не найдена. Пожалуйста, выберите другое блюдо."
+            )
+            bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
