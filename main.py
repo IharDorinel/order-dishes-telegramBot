@@ -1,9 +1,9 @@
 import telebot
-
 import handlers
 
 
-bot = telebot.TeleBot('Your_Token_Here')
+bot = telebot.TeleBot('Token')
+
 
 
 commands = [
