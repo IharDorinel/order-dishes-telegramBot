@@ -3,7 +3,7 @@ import feedback as fb
 import handlers
 
 
-bot = telebot.TeleBot('YOUR_TELEGRAM_BOT_TOKEN')
+bot = telebot.TeleBot('TOKEN')
 
 
 commands = [
