@@ -3,7 +3,7 @@ import feedback as fb
 import handlers
 
 
-bot = telebot.TeleBot('Your_Token_Here')
+bot = telebot.TeleBot('YOUR_TELEGRAM_BOT_TOKEN')
 
 
 commands = [
@@ -37,6 +37,8 @@ def choose_dish_category(call):
 def choose_dish(call):
     fb.fb_dish_selected(call, bot)
 
-
+@bot.callback_query_handler(func=lambda call: call.data.startswith('back:'))
+def back_to_category(call):
+    fb.choose_category(call.message, bot)
 
 bot.polling(none_stop=True)
