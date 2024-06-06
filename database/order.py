@@ -1,5 +1,5 @@
 # Функции для обращения в БД к таблице order_header
-
+import requests
 import telebot
 import sqlite3
 
@@ -75,24 +75,52 @@ def show_menu(message):
 #     bot.send_message(message.chat.id, "Введите количество:")
 #     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
 
+def send_message(chat_id, text):
+    url = f"https://api.telegram.org/bot{'7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48'}/sendMessage"
+    payload = {
+        'chat_id': chat_id,
+        'text': text
+    }
+    response = requests.post(url, data=payload)
+    return response
+
 def add_to_order(message, dish_id):
-    bot.send_message(message.chat.id, "Введите количество:")
-    bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
+    print('message', message.chat.id)
+    try:
+        chat_id = message.chat.id
+        print(f'add_to_order: dish_id={dish_id}')
+        print(f'message.chat.id={chat_id}')
+
+        # Отправка сообщения с использованием requests
+        response = send_message(chat_id, 'Введите количество:')
+
+        # Проверка ответа
+        print(f'Response status code: {response.status_code}')
+        print(f'Response text: {response.text}')
+
+        if response.status_code != 200:
+            raise Exception(f"Error {response.status_code}: {response.text}")
+
+        print('Message sent successfully')
+
+        print("Registering next step handler...")
+        bot.register_next_step_handler(message, process_amount)
+        print(f"Next step handler registered for chat_id {chat_id} and dish_id {dish_id}.")
+
+    except telebot.apihelper.ApiException as e:
+        print(f'Telegram API Exception: {e}')
+    except Exception as e:
+        print(f'Ошибка в add_to_order: {e}')
 
 def process_amount(message, dish_id):
+    print("Entered process_amount")
     try:
         amount = int(message.text)
-        if amount <= 0:
-            raise ValueError("Количество должно быть больше нуля.")
-        menu_item = db.cursor.execute("SELECT price FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
-        if menu_item:
-            price = menu_item[0]
-            db.add_order_position(order.order_id, dish_id, price, amount)
-            bot.send_message(message.chat.id, "Блюдо добавлено в заказ.")
-        else:
-            bot.send_message(message.chat.id, "Блюдо не найдено.")
+        response = send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
+        print(f"Processed amount: {amount} for dish_id: {dish_id}")
     except ValueError:
-        bot.send_message(message.chat.id, "Введите корректное количество.")
+        response = send_message(message.chat.id, "Пожалуйста, введите корректное количество.")
+        print("ValueError in process_amount: некорректное количество")
 
 
 # Обработчик команды /order для просмотра текущего заказа

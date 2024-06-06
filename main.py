@@ -4,7 +4,7 @@ import handlers
 from database import order
 
 
-bot = telebot.TeleBot('Your_token')
+bot = telebot.TeleBot('7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48')
 
 
 commands = [
@@ -40,7 +40,14 @@ def choose_dish(call):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_to_cart'))
 def handle_callback(call):
+    print('call', call.message)
     dish_id = call.data.split(':')[1]
     order.add_to_order(call.message, dish_id)
+
+# Обработчик текстовых сообщений
+@bot.message_handler(func=lambda message: True)
+def handle_text(message):
+    print(f"Received message: {message.text}")
+    bot.send_message(message.chat.id, "Вы ввели текст: " + message.text)
 
 bot.polling(none_stop=True)
