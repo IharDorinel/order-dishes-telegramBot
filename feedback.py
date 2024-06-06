@@ -35,7 +35,7 @@ def choose_category(message, bot):
     """
     category = message.text
     try:
-        if category == 'О сервисах рестарана':
+        if category == 'О сервисе ресторана':
             msg = bot.send_message(message.chat.id, f'Пожалуйста, напишите ваш отзыв {category.lower()}.')
             bot.send_message(
                 message.chat.id,
