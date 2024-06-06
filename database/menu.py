@@ -30,7 +30,7 @@ def get_dish_id_by_name(dish_name):
 
     conn = sqlite3.connect('EasyEats.db')
     cursor = conn.cursor()
-    print(dish_name)
+
     # Выполняем SQL-запрос для получения данных из таблицы dish
     #cursor.execute("SELECT dish_id FROM menu"
                    #"WHERE dish_name = ? ", (dish_name,))

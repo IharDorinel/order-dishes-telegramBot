@@ -13,6 +13,7 @@ def start_markup():
                '\U0001F6F5 Посмотреть статус заказа')
     return markup
 
+
 def feedback_markup():
     """Creates and returns the reply keyboard markup for feedback categories."""
     markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
@@ -33,7 +34,7 @@ def feedback_message(message, bot):
         message.chat.id,
         f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
         reply_markup=feedback_markup())
-    bot.register_next_step_handler(message, lambda m:fb.choose_category(m, bot))
+    bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
 
 
 def support_message(message, bot):
@@ -43,13 +44,13 @@ def support_message(message, bot):
 
 def category_markup():
     """Creates and returns the inline keyboard markup with categories."""
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     categories = menu.categories()
-    for emoji, name in categories:
-        markup.add(types.KeyboardButton(f'{emoji} {name}'))
-    markup.add(types.KeyboardButton('Назад в основное меню'))  # Добавляем кнопку "Назад в основное меню"
+    markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
+    button = [f'{emoji} {name}' for emoji, name in categories]
+    button1 = types.KeyboardButton('Назад в основное меню')
+    markup.add(*button)
+    markup.add(button1)  # Добавляем кнопку "Назад в основное меню"
     return markup
-
 
 
 def items_markup(category_name):
@@ -73,6 +74,15 @@ def dish_markup():
     return markup
 
 
+def command_message(message, bot):
+    if message.text == '/feedback':
+        feedback_message(message, bot)
+    elif message.text == '/support':
+        support_message(message, bot)
+    elif message.text == '/start':
+        start_message(message, bot)
+
+
 def start_perform_actions(message, bot):
     if message.text == '📋 Посмотреть меню':
         msg = bot.send_message(
@@ -85,19 +95,15 @@ def start_perform_actions(message, bot):
         bot.send_message(message.chat.id, 'Функция корзина')
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
         bot.send_message(message.chat.id, 'Функция статус заказа')
-    elif message.text == '/feedback':
-        feedback_message(message, bot)
-    elif message.text == '/support':
-        support_message(message, bot)
-
+    elif message.text in ['/start', '/feedback', '/support']:
+        command_message(message, bot)
 
 
 def category_selected(message, bot):
     if message.text == 'Назад в основное меню':
-        msg = bot.send_message(
-            message.chat.id,
-            reply_markup=start_message(message, bot)
-        )
+        msg = bot.send_message(message.chat.id, 'Выберите дальнейшее действие:', reply_markup=start_markup())
+        bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
     else:
         category_name = message.text.split(' ', 1)[1]  # Извлекаем название категории из текста кнопки
         msg = bot.send_message(
@@ -105,9 +111,8 @@ def category_selected(message, bot):
             f'Вы выбрали категорию: {category_name}. Выберите блюдо:',
             reply_markup=items_markup(category_name)
         )
-        # Здесь можно зарегистрировать следующий шаг, если требуется дополнительная обработка
-        bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
 
+        bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
 
 
 def dish_selected(message, bot):
