@@ -6,7 +6,9 @@ from database import DBfeedback
 
 def feedback_score_markup():
     """
-    Creates and returns the reply keyboard markup for feedback categories.
+    Создает и возвращает разметку клавиатуры для оценки отзывов.
+
+    :return: объект ReplyKeyboardMarkup
     """
     markup = types.ReplyKeyboardMarkup(row_width=5, one_time_keyboard=True, resize_keyboard=True)
     markup.add('1', '2', '3', '4', '5')
@@ -14,12 +16,18 @@ def feedback_score_markup():
 
 
 def dish_category_markup(message, bot):
+    """
+    Отправляет сообщение с разметкой клавиатуры для выбора категории блюд.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
     markup = types.InlineKeyboardMarkup(row_width=2)
 
-    # Load list of categories from the database
+    # Загружаем список категорий из базы данных
     categories_list = menu.categories()
-    # Create buttons
-    buttons = [types.InlineKeyboardButton(f"{e + n}", callback_data=f"category:{n}") for e, n in categories_list]
+    # Создаем кнопки
+    buttons = [types.InlineKeyboardButton(f"{e+n}", callback_data=f"category:{n}") for e, n in categories_list]
     markup.add(*buttons)
 
     bot.send_message(
@@ -31,7 +39,10 @@ def dish_category_markup(message, bot):
 
 def choose_category(message, bot):
     """
-    Handles the user's choice of feedback category.
+    Обрабатывает выбор категории обратной связи пользователем.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
     """
     category = message.text
 
@@ -48,7 +59,7 @@ def choose_category(message, bot):
         elif category == 'О блюдах':
             dish_category_markup(message, bot)
 
-        elif category.split(':')[0] == 'Вы выбрали категорию':
+        elif category.startswith('Вы выбрали категорию'):
             bot.edit_message_text(
                 text=f'\u2B05 Вы вернулись в выбор категорий',
                 chat_id=message.chat.id,
@@ -67,16 +78,18 @@ def choose_category(message, bot):
 
 def dish_category(call, bot):
     """
-    Handles the user's choice of dish category.
+    Обрабатывает выбор категории блюда пользователем.
+
+    :param call: объект вызова от пользователя
+    :param bot: объект бота для отправки сообщений
     """
     category_name = call.data.split(':')[1]
     items_list = menu.items_by_category(category_name)
     markup = types.InlineKeyboardMarkup(row_width=2)
 
-    # Create buttons for each item in the category
-    buttons = [types.InlineKeyboardButton(f"{item_name}",
-                                          callback_data=f"dish:{item_name}")
-               for item_name in items_list]
+    # Создаем кнопки для каждого блюда в категории
+    buttons = [types.InlineKeyboardButton(f"{item_name}", callback_data=f"dish:{item_name}") for item_name in
+               items_list]
     markup.add(*buttons)
     markup.add(types.InlineKeyboardButton('Назад', callback_data='back:'))
 
@@ -91,35 +104,45 @@ def dish_category(call, bot):
 
 def fb_dish_selected(call, bot):
     """
-    Handles the user's choice of a specific dish and asks for feedback.
+    Обрабатывает выбор конкретного блюда пользователем и запрашивает отзыв.
+
+    :param call: объект вызова от пользователя
+    :param bot: объект бота для отправки сообщений
     """
     dish_name = call.data.split(':')[1]
     dish_id = menu.get_dish_id_by_name(dish_name)
-    msg = bot.edit_message_text(
-        text=f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".',
-        chat_id=call.message.chat.id,
-        message_id=call.message.message_id,
-
+    msg = bot.send_message(
+        call.message.chat.id,
+        f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".'
     )
     bot.register_next_step_handler(msg, lambda msg: score_selected(msg, bot, dish_id))
 
 
 def score_selected(message, bot, dish_id=None):
     """
-    Asks the user to provide a score for their feedback.
+    Запрашивает у пользователя оценку для его отзыва.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    :param dish_id: идентификатор блюда (если имеется)
     """
     feedback_text = message.text
     if feedback_text in ['/start', '/feedback', '/support']:
         handlers.command_message(message, bot)
     else:
         msg = bot.send_message(message.chat.id, 'Поставьте пожалуйста оценку от 1 до 5.',
-                           reply_markup=feedback_score_markup())
+                               reply_markup=feedback_score_markup())
         bot.register_next_step_handler(msg, lambda msg: save_feedback(msg, bot, feedback_text, dish_id))
 
 
 def save_feedback(message, bot, feedback_text, dish_id=None):
     """
-    Saves the user's feedback and score in the database.
+    Сохраняет отзыв и оценку пользователя в базе данных.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    :param feedback_text: текст отзыва пользователя
+    :param dish_id: идентификатор блюда (если имеется)
     """
     try:
         score = int(message.text)
@@ -127,12 +150,14 @@ def save_feedback(message, bot, feedback_text, dish_id=None):
         user_id = user.id
         DBfeedback.add_feedback(user_id, dish_id, score, feedback_text)
 
-        bot.send_message(user_id, 'Спасибо за вашу оценку и отзыв! Мы ценим ваше мнение.', reply_markup=handlers.start_markup())
+        bot.send_message(user_id, 'Спасибо за вашу оценку и отзыв! Мы ценим ваше мнение.',
+                         reply_markup=handlers.start_markup())
         bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
 
     except ValueError:
         if message.text in ['/start', '/feedback', '/support']:
             handlers.command_message(message, bot)
         else:
-            msg = bot.send_message(message.chat.id, 'Вы ввели некорректное значение. Пожалуйста, введите число от 1 до 5.')
+            msg = bot.send_message(message.chat.id,
+                                   'Вы ввели некорректное значение. Пожалуйста, введите число от 1 до 5.')
             bot.register_next_step_handler(msg, lambda msg: save_feedback(msg, bot, feedback_text, dish_id))
