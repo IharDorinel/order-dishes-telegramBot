@@ -34,6 +34,7 @@ def choose_category(message, bot):
     Handles the user's choice of feedback category.
     """
     category = message.text
+
     try:
         if category == 'О сервисе ресторана':
             msg = bot.send_message(message.chat.id, f'Пожалуйста, напишите ваш отзыв {category.lower()}.')
@@ -62,7 +63,6 @@ def choose_category(message, bot):
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.')
             handlers.feedback_message(message, bot)
-
 
 
 def dish_category(call, bot):
