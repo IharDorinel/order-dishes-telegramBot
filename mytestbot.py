@@ -1,5 +1,7 @@
 import telebot
+
 from telebot import types
+
 import handlers
 
 # Используем ваш реальный API токен
@@ -39,3 +41,4 @@ def request_address(message):
 
 # Запуск бота
 bot.polling(none_stop=True)
+
