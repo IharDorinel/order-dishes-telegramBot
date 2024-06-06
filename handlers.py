@@ -73,28 +73,10 @@ def dish_markup(dish_id):
     print('dish_id', dish_id)
     """Creates and returns the inline keyboard markup with options for a dish."""
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data=f'add_to_cart:{dish_id}'))
+    markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data=f"add_to_cart:{dish_id}"))
     markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data='read_review'))
     return markup
 
-# Обработчик callback данных
-@bot.callback_query_handler(func=lambda call: call.data.startswith('add_to_cart'))
-def handle_callback(call):
-    print(call.data)
-    dish_id = call.data.split(':')[1]
-    add_to_order(call.message, dish_id)
-
-# Обработчик добавления блюда в заказ
-def add_to_order(message, dish_id):
-    bot.send_message(message.chat.id, "Введите количество:")
-    bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
-
-def process_amount(message, dish_id):
-    try:
-        amount = int(message.text)
-        bot.send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
-    except ValueError:
-        bot.send_message(message.chat.id, "Пожалуйста, введите корректное количество.")
 
 def start_perform_actions(message, bot):
     if message.text == '📋 Посмотреть меню':
@@ -152,3 +134,21 @@ def dish_selected(message, bot):
                     reply_markup=dish_markup(dish_id)
                 )
         bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+
+def add_to_order(message, dish_id):
+    try:
+        print('add_to_order', dish_id)
+        print('message', message.chat.id)
+
+        msg = bot.send_message(message.chat.id, "Введите количество:")
+        bot.register_next_step_handler(msg, lambda msg: process_amount(msg, dish_id))
+    except Exception as e:
+        print(f'Ошибка в add_to_order: {e}')
+
+
+def process_amount(message, dish_id):
+    try:
+        amount = int(message.text)
+        bot.send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
+    except ValueError:
+        bot.send_message(message.chat.id, "Пожалуйста, введите корректное количество.")
