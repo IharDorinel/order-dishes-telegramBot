@@ -6,6 +6,8 @@ import handlers
 bot = telebot.TeleBot('7102874801:AAE4J6_9IcR2kFi2bN-hinUpBEScbyoUSvA')
 
 
+
+
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
