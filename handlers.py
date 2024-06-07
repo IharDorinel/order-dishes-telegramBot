@@ -108,7 +108,7 @@ def items_markup(category_name):
     return markup
 
 
-def dish_markup():
+def dish_markup(message):
     """
     Создает и возвращает разметку клавиатуры с опциями для выбранного блюда.
 
@@ -116,7 +116,7 @@ def dish_markup():
     """
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data='add_to_cart'))
-    markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data='read_review'))
+    markup.add(types.InlineKeyboardButton('Посмотреть отзывы', callback_data=f'read_review:{message.text}'))
     return markup
 
 
@@ -185,27 +185,6 @@ def category_selected(message, bot):
             bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 
-class BotMessageManager:
-    def __init__(self):
-        self.user_messages = {}
-
-    def add_message(self, user_id, message_id):
-        if user_id not in self.user_messages:
-            self.user_messages[user_id] = []
-        self.user_messages[user_id].append(message_id)
-
-    def clear_previous_buttons(self, bot, chat_id, user_id):
-        if user_id in self.user_messages:
-            for message_id in self.user_messages[user_id]:
-                try:
-                    bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
-                except Exception as e:
-                    print(f"Error editing message reply markup: {e}")
-            self.user_messages[user_id] = []
-
-# Создаем экземпляр класса BotMessageManager
-message_manager = BotMessageManager()
-
 def dish_selected(message, bot):
     """
     Обрабатывает выбор блюда пользователем.
@@ -233,20 +212,17 @@ def dish_selected(message, bot):
             description, price, image_url = details
             caption = f"{dish_name}\n\n{description}\n\nЦена: {price} руб."
 
-            # Удаляем inline кнопки из предыдущих сообщений
-            message_manager.clear_previous_buttons(bot, message.chat.id, user_id)
-
             # Отправляем новое сообщение с фото
             with open(image_url, 'rb') as photo:
                 msg = bot.send_photo(
                     message.chat.id,
                     photo=photo,
                     caption=caption,
-                    reply_markup=dish_markup()
+                    reply_markup=dish_markup(message)
                 )
 
             # Сохраняем id отправленного сообщения для последующего редактирования
-            message_manager.add_message(user_id, msg.message_id)
+            # message_manager.add_message(user_id, msg.message_id)
             bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
         else:
             # В случае отсутствия информации о блюде, возвращаем сообщение об ошибке

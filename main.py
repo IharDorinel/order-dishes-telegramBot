@@ -4,7 +4,7 @@ import handlers
 
 
 
-bot = telebot.TeleBot('YOUR_TOKEN')
+bot = telebot.TeleBot('TOKEN')
 
 
 
@@ -42,5 +42,10 @@ def choose_dish(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith('back:'))
 def back_to_category(call):
     fb.choose_category(call.message, bot)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('read_review:'))
+def read_dish_review(call):
+    fb.read_dish_review(call, bot)
+
 
 bot.polling(none_stop=True)
