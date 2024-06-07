@@ -1,10 +1,11 @@
 # Функции для обращения в БД к таблице order_header
-import requests
+
 import telebot
 import sqlite3
+# from main import bot
 
 # Класс для работы с базой данных
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TOKEN = '7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48'
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -53,19 +54,11 @@ order = Order()
 
 
 # Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "Добро пожаловать в наш ресторан! Используйте /menu для просмотра меню.")
+# @bot.message_handler(commands=['start'])
+# def send_welcome(message):
+#     bot.reply_to(message, "Добро пожаловать в наш ресторан! Используйте /menu для просмотра меню.")
 
 
-# Обработчик команды /menu
-@bot.message_handler(commands=['menu'])
-def show_menu(message):
-    menu_items = db.get_menu()
-    for item in menu_items:
-        dish_id, category_id, dish_name, description, price, image_url = item
-        bot.send_photo(message.chat.id, image_url,
-                       caption=f"{dish_name}\n{description}\nЦена: {price} руб.\n/dish_{dish_id}")
 
 
 # # Обработчик добавления блюда в заказ
@@ -75,14 +68,14 @@ def show_menu(message):
 #     bot.send_message(message.chat.id, "Введите количество:")
 #     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
 
-def send_message(chat_id, text):
-    url = f"https://api.telegram.org/bot{'7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48'}/sendMessage"
-    payload = {
-        'chat_id': chat_id,
-        'text': text
-    }
-    response = requests.post(url, data=payload)
-    return response
+# def send_message(chat_id, text):
+#     url = f"https://api.telegram.org/bot{'7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48'}/sendMessage"
+#     payload = {
+#         'chat_id': chat_id,
+#         'text': text
+#     }
+#     response = requests.post(url, data=payload)
+#     return response
 
 def add_to_order(message, dish_id):
     print('message', message.chat.id)
@@ -91,20 +84,13 @@ def add_to_order(message, dish_id):
         print(f'add_to_order: dish_id={dish_id}')
         print(f'message.chat.id={chat_id}')
 
-        # Отправка сообщения с использованием requests
-        response = send_message(chat_id, 'Введите количество:')
+        msg = bot.send_message(chat_id, 'Введите количество:')
 
-        # Проверка ответа
-        print(f'Response status code: {response.status_code}')
-        print(f'Response text: {response.text}')
-
-        if response.status_code != 200:
-            raise Exception(f"Error {response.status_code}: {response.text}")
 
         print('Message sent successfully')
 
         print("Registering next step handler...")
-        bot.register_next_step_handler(message, process_amount)
+        bot.register_next_step_handler(msg, lambda msg: process_amount(msg, dish_id, bot))
         print(f"Next step handler registered for chat_id {chat_id} and dish_id {dish_id}.")
 
     except telebot.apihelper.ApiException as e:
@@ -116,35 +102,11 @@ def process_amount(message, dish_id):
     print("Entered process_amount")
     try:
         amount = int(message.text)
-        response = send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
+        bot.send_message(message.chat.id, f"Блюдо {dish_id} добавлено в корзину в количестве {amount}!")
         print(f"Processed amount: {amount} for dish_id: {dish_id}")
     except ValueError:
-        response = send_message(message.chat.id, "Пожалуйста, введите корректное количество.")
+        bot.send_message(message.chat.id, "Пожалуйста, введите корректное количество.")
         print("ValueError in process_amount: некорректное количество")
-
-
-# Обработчик команды /order для просмотра текущего заказа
-@bot.message_handler(commands=['order'])
-def show_order(message):
-    order_items = db.get_order(order.order_id)
-    if not order_items:
-        bot.send_message(message.chat.id, "Ваш заказ пуст.")
-    else:
-        order_details = ""
-        total_price = 0
-        for item in order_items:
-            dish_name, amount, price, item_total_price = item
-            order_details += f"{dish_name} x{amount} - {price} руб. за шт. (Итого: {item_total_price} руб.)\n"
-            total_price += item_total_price
-        order_details += f"\nОбщая сумма заказа: {total_price} руб."
-        bot.send_message(message.chat.id, order_details)
-
-
-# Обработчик команды /delete для удаления позиции из заказа
-@bot.message_handler(commands=['delete'])
-def delete_from_order(message):
-    bot.send_message(message.chat.id, "Введите ID позиции для удаления:")
-    bot.register_next_step_handler(message, process_delete)
 
 
 def process_delete(message):
@@ -155,7 +117,4 @@ def process_delete(message):
     except ValueError:
         bot.send_message(message.chat.id, "Введите корректный ID позиции.")
 
-    # Обработчик команды /confirm для подтверждения заказа
-    @bot.message_handler(commands=['confirm'])
-    def confirm_order(message):
-        bot.send_message(message.chat.id, "Ваш заказ подтвержден. Спасибо за покупку!")
+
