@@ -22,6 +22,7 @@ def categories():
     # Формируем и возвращаем список строк в формате 'emoji name'
     return rows
 
+
 def get_dish_id_by_name(dish_name):
     """
     Функция для получения данных из таблицы menu
@@ -32,8 +33,8 @@ def get_dish_id_by_name(dish_name):
     cursor = conn.cursor()
 
     # Выполняем SQL-запрос для получения данных из таблицы dish
-    #cursor.execute("SELECT dish_id FROM menu"
-                   #"WHERE dish_name = ? ", (dish_name,))
+    # cursor.execute("SELECT dish_id FROM menu"
+    # "WHERE dish_name = ? ", (dish_name,))
     query = """
         SELECT dish_id
         FROM menu
@@ -65,7 +66,8 @@ def items_by_category(category_name):
     items = cursor.fetchall()
     conn.close()
 
-    return  [item[0] for item in items]
+    return [item[0] for item in items]
+
 
 def dish_details(dish_name):
     conn = sqlite3.connect('EasyEats.db')
