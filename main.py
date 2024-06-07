@@ -1,11 +1,10 @@
 import telebot
 import feedback as fb
 import handlers
-from database import order
+from database import order as ord
 
 
 bot = telebot.TeleBot('Your_token')
-
 
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
@@ -41,6 +40,38 @@ def choose_dish(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_to_cart'))
 def handle_callback(call):
     dish_id = call.data.split(':')[1]
-    order.add_to_order(call.message, dish_id)
+    user_id = call.from_user.id
+    if user_id not in ord.user_data:
+        ord.user_data[user_id] = {'order': ord.Order(user_id)}
+    order = ord.user_data[user_id]['order']
+    handlers.add_to_order(call.message, dish_id, order, bot)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete_position'))
+def delete_from_order(call):
+    user_id = call.from_user.id
+    order = ord.user_data[user_id]['order']
+    bot.send_message(call.message.chat.id, "Введите № позиции для удаления:")
+    bot.register_next_step_handler(call.message, lambda m: handlers.process_delete(m, bot, order))
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('change_position'))
+def change_order(call):
+    user_id = call.from_user.id
+    order = ord.user_data[user_id]['order']
+    bot.send_message(call.message.chat.id, "Введите № позиции для изменения:")
+    bot.register_next_step_handler(call.message, lambda m: handlers.process_change(m, bot, order))
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('clear_cart'))
+def clear_cart(call):
+    user_id = call.from_user.id
+    order = ord.user_data[user_id]['order']
+    order.clear()
+    bot.send_message(call.message.chat.id, "Корзина очищена")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))
+def checkout(call):
+    user_id = call.from_user.id
+    order = ord.user_data[user_id]['order']
+    #order.clear() -- не забыть в функции которая будет финализировать заказ очистить корзину в конце
+
 
 bot.polling(none_stop=True)
