@@ -74,7 +74,7 @@ def dish_details(dish_name):
     cursor = conn.cursor()
 
     query = """
-    SELECT m.description, m.price, m.image_url
+    SELECT m.dish_id, m.description, m.price, m.image_url
     FROM menu m
     WHERE m.dish_name = ?
     """

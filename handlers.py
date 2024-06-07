@@ -1,5 +1,7 @@
 # Функции-обработчики для команд и нажатия кнопок
+import telebot
 from database import menu
+from database.order import *
 from telebot import types
 import feedback as fb
 
@@ -218,16 +220,114 @@ def dish_selected(message, bot):
                     message.chat.id,
                     photo=photo,
                     caption=caption,
-                    reply_markup=dish_markup(message)
+                    reply_markup=dish_markup(dish_id)
                 )
+        bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
 
-            # Сохраняем id отправленного сообщения для последующего редактирования
-            # message_manager.add_message(user_id, msg.message_id)
-            bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+
+def add_to_order(message, dish_id, order, bot):
+    for position in order.positions:
+        if position.dish_id == dish_id:
+            bot.send_message(message.chat.id, "Блюдо уже есть в заказе. Вы можете отредактировать количество в корзине.")
+            return
+    bot.send_message(message.chat.id, "Введите количество:")
+    bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id, order, bot))
+
+def process_amount(message, dish_id, order, bot):
+    db = Database('EasyEats.db')
+    try:
+        amount = int(message.text)
+        if amount <= 0:
+            raise ValueError("Количество должно быть больше нуля.")
+        #menu_item = db.cursor.execute("SELECT price FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
+        menu_item = db.get_dish(dish_id)
+        if menu_item:
+            price = menu_item[4]
+            #name = menu_item[2]
+            #db.add_order_position(order.order_id, dish_id, price, amount)
+            position = Position(dish_id, amount, price)
+            order.add_position(position)
+            bot.send_message(message.chat.id, "Блюдо добавлено в заказ.")
+            #####
+            show_order(message, bot, order)
+            #####
         else:
-            # В случае отсутствия информации о блюде, возвращаем сообщение об ошибке
-            msg = bot.send_message(
-                message.chat.id,
-                "Извините, информация о данном блюде не найдена. Пожалуйста, выберите другое блюдо."
-            )
-            bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
+            bot.send_message(message.chat.id, "Блюдо не найдено.")
+    except ValueError:
+        bot.send_message(message.chat.id, "Введите корректное количество.")
+
+
+def order_markup(order):
+    """Creates and returns the inline keyboard markup with options for a cart."""
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton('Удалить позицию', callback_data="delete_position"))
+    markup.add(types.InlineKeyboardButton('Изменить количество в позиции', callback_data="change_position"))
+    markup.add(types.InlineKeyboardButton('Очистить корзину', callback_data='clear_cart'))
+    markup.add(types.InlineKeyboardButton('Оформить заказ', callback_data='checkout'))
+    return markup
+
+
+def show_order(message, bot, order):
+    db = Database('EasyEats.db')
+
+    if not order.positions:
+        bot.send_message(message.chat.id, "Ваш заказ пуст.")
+    else:
+        order_details = ""
+        ind = 0
+        for item in order.positions:
+            menu_item = db.get_dish(item.dish_id)
+            dish_name = menu_item[2]
+            ind += 1
+            # dish_name = db.cursor.execute("SELECT dish_name FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
+            order_details += f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. (Итого: {item.total_price} руб.)\n"
+        order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
+        bot.send_message(message.chat.id, order_details, reply_markup=order_markup(order))
+    db.close()
+
+
+def process_delete(message, bot, order):
+    try:
+        pos_id = int(message.text)
+        # user_id = message.from_user.id
+        # order = user_data[user_id]['order']
+        pos_for_delete = order.positions[pos_id-1]
+        order.remove_position(pos_for_delete)
+        #db.delete_order_position(pos_id)
+        bot.send_message(message.chat.id, "Позиция удалена из заказа.")
+    except ValueError:
+        bot.send_message(message.chat.id, "Введите корректный № позиции.")
+
+    # Обработчик команды /confirm для подтверждения заказа
+    @bot.message_handler(commands=['confirm'])
+    def confirm_order(message):
+        bot.send_message(message.chat.id, "Ваш заказ подтвержден. Спасибо за покупку!")
+
+def process_change(message, bot, order):
+    try:
+        pos_id = int(message.text)
+        pos_for_change = order.positions[pos_id-1]
+        bot.send_message(message.chat.id, "Введите количество:")
+        bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
+
+    except ValueError:
+        bot.send_message(message.chat.id, "Введите корректный № позиции.")
+
+def process_change_amount(message, bot, order, position):
+    db = Database('EasyEats.db')
+    try:
+        amount = int(message.text)
+        if amount <= 0:
+            raise ValueError("Количество должно быть больше нуля.")
+        else:
+            position.change_amount(amount)
+            order.recalculate_total_price()
+            bot.send_message(message.chat.id, "Позиция изменена.")
+    except ValueError:
+        bot.send_message(message.chat.id, "Введите корректное количество.")
+
+
+def display_order(message, bot):
+    user_id = message.from_user.id
+    order = user_data[user_id]['order']
+    show_order(message, bot, order)
