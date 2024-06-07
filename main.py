@@ -3,8 +3,10 @@ import feedback as fb
 import handlers
 from database import order as ord
 
+from telebot import types
 
-bot = telebot.TeleBot('Your_Token_Here')
+
+bot = telebot.TeleBot('')
 
 
 commands = [

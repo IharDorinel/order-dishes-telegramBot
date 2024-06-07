@@ -321,3 +321,24 @@ def display_order(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']
     show_order(message, bot, order)
+
+
+def address_markup():
+    """Creates and returns the inline keyboard markup for entering the delivery address."""
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    markup.add(types.KeyboardButton('Введите адрес доставки'))
+    return markup
+
+
+def request_address(message, bot):
+    """Function to request delivery address from the user."""
+    msg = bot.send_message(message.chat.id, "Пожалуйста, введите свой адрес доставки заказа:", reply_markup=address_markup())
+    bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+
+
+def save_address(message, bot):
+    """Function to save user's delivery address."""
+    user_id = message.from_user.id
+    address = message.text
+    # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
+    bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
