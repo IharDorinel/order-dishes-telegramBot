@@ -109,11 +109,14 @@ def fb_dish_selected(call, bot):
     :param call: объект вызова от пользователя
     :param bot: объект бота для отправки сообщений
     """
+
     dish_name = call.data.split(':')[1]
     dish_id = menu.get_dish_id_by_name(dish_name)
-    msg = bot.send_message(
-        call.message.chat.id,
-        f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".'
+    msg = bot.edit_message_text(
+        text=f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".',
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+
     )
     bot.register_next_step_handler(msg, lambda msg: score_selected(msg, bot, dish_id))
 
