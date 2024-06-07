@@ -46,17 +46,25 @@ class Database:
     def save_order(self, order):
         sql = '''INSERT INTO order_header (user_id, total_price, address, status, create_at, update_at, payment_method)
                      VALUES (?, ?, ?, ?, ?, ?, ?)'''
+        order.create_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время создания заказа
         order.update_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время изменения заказа
         self.cursor.execute(sql, (order.user_telegram, order.total_price, order.address, order.status, order.create_at, order.update_at, order.payment_method))
         self.conn.commit()
         order_id = self.cursor.lastrowid
         self.save_order_position(order_id, order.positions)
+
     def save_order_position(self, order_id, positions):
         for position in positions:
             sql = '''INSERT INTO order_positions (order_id, dish_id, price, amount)
                          VALUES (?, ?, ?, ?)'''
             self.cursor.execute(sql, (order_id, position.dish_id, position.price, position.amount))
             self.conn.commit()
+
+    def update_order_status(self, order_id, status):
+        sql = '''UPDATE order_header SET status = ?, update_at = ? WHERE order_id = ?'''
+        update_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время изменения заказа
+        self.cursor.execute(sql, (status, update_at, order_id))
+        self.conn.commit()
 
 
 # Инициализация базы данных   --- переносим в те функции где используем, чтобы потом закрыть курсор

@@ -2,6 +2,7 @@
 import telebot
 from database import menu
 from database.order import *
+from database.user import *
 from telebot import types
 import feedback as fb
 
@@ -322,6 +323,18 @@ def display_order(message, bot):
     order = user_data[user_id]['order']
     show_order(message, bot, order)
 
+def check_adress(message, bot):
+    user_id = message.from_user.id
+    order = user_data[user_id]['order']
+    user_record = get_user(user_id)
+    if user_record:
+        order.address = user_record[3]
+    if not order.address:
+        request_address(message, bot)
+    else:
+        msg = bot.send_message(message.chat.id, f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
+                               reply_markup=address_markup())
+        #bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
 
 def address_markup():
     """Creates and returns the inline keyboard markup for entering the delivery address."""
@@ -332,7 +345,7 @@ def address_markup():
 
 def request_address(message, bot):
     """Function to request delivery address from the user."""
-    msg = bot.send_message(message.chat.id, "Пожалуйста, введите свой адрес доставки заказа:", reply_markup=address_markup())
+    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:", reply_markup=address_markup())
     bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
 
 
@@ -342,3 +355,14 @@ def save_address(message, bot):
     address = message.text
     # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+
+def finalize_order(message, bot):
+    user_id = message.from_user.id
+    order = user_data[user_id]['order']
+    order.status = 'in process'   # ?????? или оплачен или в обработке или что?
+    db = Database('EasyEats.db')
+    db.save_order(order)  # сохраняем заголовок и позиции в базе данных
+    db.close()
+    save_user(order)      # сохраняем данные пользователя в базе данных
+    order.clear()
+    bot.send_message(message.chat.id, "Ваш заказ принят. Спасибо за покупку!")

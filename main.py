@@ -81,7 +81,6 @@ def clear_cart(call):
 def checkout(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
-    #order.clear() -- не забыть в функции которая будет финализировать заказ очистить корзину в конце
 
 
 bot.polling(none_stop=True)
