@@ -110,15 +110,12 @@ def items_markup(category_name):
     return markup
 
 
-def dish_markup(message):
-    """
-    Создает и возвращает разметку клавиатуры с опциями для выбранного блюда.
-
-    :return: объект InlineKeyboardMarkup
-    """
+def dish_markup(dish_id):
+    print('dish_id', dish_id)
+    """Creates and returns the inline keyboard markup with options for a dish."""
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data='add_to_cart'))
-    markup.add(types.InlineKeyboardButton('Посмотреть отзывы', callback_data=f'read_review:{message.text}'))
+    markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data=f"add_to_cart:{dish_id}"))
+    markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data='read_review'))
     return markup
 
 
@@ -139,12 +136,6 @@ def command_message(message, bot):
 
 
 def start_perform_actions(message, bot):
-    """
-    Обрабатывает действия пользователя, выбранные в начальном меню.
-
-    :param message: объект сообщения от пользователя
-    :param bot: объект бота для отправки сообщений
-    """
     if message.text == '📋 Посмотреть меню':
         msg = bot.send_message(
             message.chat.id,
@@ -153,11 +144,10 @@ def start_perform_actions(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
     elif message.text.startswith('🛒 Корзина'):
-        bot.send_message(message.chat.id, 'Функция корзина')
+        display_order(message, bot)
+        bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
         bot.send_message(message.chat.id, 'Функция статус заказа')
-    elif message.text in ['/start', '/feedback', '/support']:
-        command_message(message, bot)
 
 
 def category_selected(message, bot):
@@ -211,7 +201,7 @@ def dish_selected(message, bot):
         dish_name = message.text
         details = menu.dish_details(dish_name)
         if details:
-            description, price, image_url = details
+            dish_id, description, price, image_url = details
             caption = f"{dish_name}\n\n{description}\n\nЦена: {price} руб."
 
             # Отправляем новое сообщение с фото

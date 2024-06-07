@@ -6,7 +6,6 @@ from database import order as ord
 
 bot = telebot.TeleBot('Your_Token_Here')
 
-bot = telebot.TeleBot('Your_Token')
 
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
