@@ -109,11 +109,14 @@ def fb_dish_selected(call, bot):
     :param call: объект вызова от пользователя
     :param bot: объект бота для отправки сообщений
     """
+
     dish_name = call.data.split(':')[1]
     dish_id = menu.get_dish_id_by_name(dish_name)
-    msg = bot.send_message(
-        call.message.chat.id,
-        f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".'
+    msg = bot.edit_message_text(
+        text=f'Пожалуйста, напишите ваш отзыв о блюде "{dish_name}".',
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+
     )
     bot.register_next_step_handler(msg, lambda msg: score_selected(msg, bot, dish_id))
 
@@ -161,3 +164,24 @@ def save_feedback(message, bot, feedback_text, dish_id=None):
             msg = bot.send_message(message.chat.id,
                                    'Вы ввели некорректное значение. Пожалуйста, введите число от 1 до 5.')
             bot.register_next_step_handler(msg, lambda msg: save_feedback(msg, bot, feedback_text, dish_id))
+
+def read_dish_review(call, bot):
+    """
+    Обрабатывает выбор конкретного блюда пользователем и показывает отзыв.
+
+    :param call: объект вызова от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    dish_name = call.data.split(':')[1]
+    dish_id = menu.get_dish_id_by_name(dish_name)
+    feedback = DBfeedback.get_feedback_by_dish_id(dish_id)
+    if feedback[0] is None:
+        bot.send_message(call.message.chat.id, f'Пока нет отзывов для {dish_name}. Ваш отзыв может быть первым.')
+    else:
+        feedback_massage = ''
+        for feedback_entry in feedback[1]:
+            user_id = feedback_entry[1]
+            feedback_text = feedback_entry[0]
+            feedback_massage += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
+        bot.send_message(call.message.chat.id, f"*Средняя оценка {dish_name} :* {feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
+                                               f"{feedback_massage}", parse_mode='Markdown')
