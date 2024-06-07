@@ -1,6 +1,5 @@
 # Функции-обработчики для команд и нажатия кнопок
 import telebot
-import requests
 from database import menu
 from database.order import *
 from telebot import types
@@ -88,7 +87,6 @@ def start_perform_actions(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
     elif message.text.startswith('🛒 Корзина'):
-        #bot.send_message(message.chat.id, 'Функция корзина')
         display_order(message, bot)
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
@@ -181,24 +179,9 @@ def order_markup(order):
     return markup
 
 
-# Обработчик команды /order для просмотра текущего заказа
-#@bot.message_handler(commands=['order'])
 def show_order(message, bot, order):
     db = Database('EasyEats.db')
-    # user_id = message.from_user.id
-    # order = user_data[user_id]['order']
-    #order_items = db.get_order(order.order_id)
-    # if not order_items:
-    #     bot.send_message(message.chat.id, "Ваш заказ пуст.")
-    # else:
-    #     order_details = ""
-    #     total_price = 0
-    #     for item in order_items:
-    #         dish_name, amount, price, item_total_price = item
-    #         order_details += f"{dish_name} x{amount} - {price} руб. за шт. (Итого: {item_total_price} руб.)\n"
-    #         total_price += item_total_price
-    #     order_details += f"\nОбщая сумма заказа: {total_price} руб."
-    #     bot.send_message(message.chat.id, order_details)
+
     if not order.positions:
         bot.send_message(message.chat.id, "Ваш заказ пуст.")
     else:
@@ -213,15 +196,6 @@ def show_order(message, bot, order):
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup(order))
     db.close()
-
-
-# Обработчик команды /delete для удаления позиции из заказа
-#@bot.message_handler(commands=['delete'])
-# @bot.callback_query_handler(func=lambda call: call.data.startswith('delete_position:'))
-# def delete_from_order(call):
-#     order = call.data.split(':')[1]
-#     bot.send_message(call.message.chat.id, "Введите № позиции для удаления:")
-#     bot.register_next_step_handler(call.message, process_delete)
 
 
 def process_delete(message, bot, order):
@@ -265,7 +239,6 @@ def process_change_amount(message, bot, order, position):
         bot.send_message(message.chat.id, "Введите корректное количество.")
 
 
-#@bot.message_handler(commands=['order'])
 def display_order(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']

@@ -1,17 +1,11 @@
 # Функции для обращения в БД к таблице order_header
-
-import telebot
 import sqlite3
-from telebot import types
+
 import datetime
 
 user_data = {}
 
 # Класс для работы с базой данных
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-
-bot = telebot.TeleBot(TOKEN)
-
 
 class Database:
     def __init__(self, db_name):
@@ -105,32 +99,3 @@ class Position:
     def change_amount(self, new_amount):
         self.amount = new_amount
         self.total_price = new_amount * self.price
-
-
-#order = Order()
-
-
-# Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "Добро пожаловать в наш ресторан! Используйте /menu для просмотра меню.")
-
-
-# Обработчик команды /menu
-@bot.message_handler(commands=['menu'])
-def show_menu(message):
-    db = Database('EasyEats.db')
-    menu_items = db.get_menu()
-    for item in menu_items:
-        dish_id, category_id, dish_name, description, price, image_url = item
-        bot.send_photo(message.chat.id, image_url,
-                       caption=f"{dish_name}\n{description}\nЦена: {price} руб.\n/dish_{dish_id}")
-    db.close()
-
-# # Обработчик добавления блюда в заказ
-# @bot.message_handler(func=lambda message: message.text.startswith('/dish_'))
-# def add_to_order(message, dish_id):
-#     dish_id = int(message.text.split('_')[1])
-#     bot.send_message(message.chat.id, "Введите количество:")
-#     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id))
-
