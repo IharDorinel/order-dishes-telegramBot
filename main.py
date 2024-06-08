@@ -59,6 +59,7 @@ def handle_callback(call):
     if user_id not in ord.user_data:
         ord.user_data[user_id] = {'order': ord.Order(user_id)}
     order = ord.user_data[user_id]['order']
+    print('user_data', ord.user_data[user_id]['order'])
     handlers.add_to_order(call.message, dish_id, order, bot)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('delete_position'))
