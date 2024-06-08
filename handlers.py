@@ -24,6 +24,19 @@ def start_message(message, bot):
     # Регистрируем обработчик следующего шага
     bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
 
+def basket_message(message, bot):
+    """
+    Отправляет сообщение с содержимым корзины.
+
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    msg = bot.send_message(
+            message.chat.id,
+            f'Ваша корзина:', reply_markup=start_markup())
+    display_order(message, bot)
+    bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
 
 def feedback_message(message, bot):
     """
@@ -50,7 +63,7 @@ def look_for_feedback(message, bot):
     bot.send_message(
         message.chat.id,
         f'Здравствуйте, {message.from_user.first_name}! Вот последние отзывы, о сервисах ресторана.',)
-    # Регистрируем обработчик следующего шага
+
     fb.look_service_feedback(message, bot)
 def support_message(message, bot):
     """
@@ -139,6 +152,7 @@ def command_message(message, bot):
     """
     commands = {
         '/feedback': feedback_message,
+        '/basket': basket_message,
         '/support': support_message,
         '/look_feedback':look_for_feedback,
         '/start': start_message
@@ -156,13 +170,13 @@ def start_perform_actions(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
     elif message.text.startswith('🛒 Корзина'):
-        display_order(message, bot)
-        bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
+        basket_message(message, bot)
+
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
         bot.send_message(message.chat.id, 'Функция статус заказа')
 
     else:
-        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
+        if message.text in ['/start', '/basket', '/feedback','/look_feedback', '/support']:
             command_message(message, bot)
 
 
@@ -188,7 +202,7 @@ def category_selected(message, bot):
             )
             bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
     except (IndexError, ValueError):
-        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
+        if message.text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
             command_message(message, bot)
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.', reply_markup=start_markup())
@@ -212,7 +226,7 @@ def dish_selected(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
 
-    elif message.text in ['/start', '/feedback','/look_feedback', '/support']:
+    elif message.text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
         command_message(message, bot)
 
     else:

@@ -69,7 +69,7 @@ def choose_category(message, bot):
         else:
             raise ValueError
     except ValueError:
-        if category in ['/start', '/feedback','/look_feedback', '/support']:
+        if category in ['/start','/basket', '/feedback','/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.')
@@ -130,7 +130,7 @@ def score_selected(message, bot, dish_id=None):
     :param dish_id: идентификатор блюда (если имеется)
     """
     feedback_text = message.text
-    if feedback_text in ['/start', '/feedback','/look_feedback', '/support']:
+    if feedback_text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
         handlers.command_message(message, bot)
     else:
         msg = bot.send_message(message.chat.id, 'Поставьте пожалуйста оценку от 1 до 5.',
@@ -158,7 +158,7 @@ def save_feedback(message, bot, feedback_text, dish_id=None):
         bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
 
     except ValueError:
-        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
+        if message.text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             msg = bot.send_message(message.chat.id,
