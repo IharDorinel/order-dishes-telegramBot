@@ -88,4 +88,9 @@ def checkout(call):
     #order.clear() -- не забыть в функции которая будет финализировать заказ очистить корзину в конце
 
 
+# Обработчик команды /confirm для подтверждения заказа
+@bot.message_handler(commands=['confirm'])
+def confirm_order(message):
+    bot.send_message(message.chat.id, "Ваш заказ подтвержден. Спасибо за покупку!")
+
 bot.polling(none_stop=True)
