@@ -1,6 +1,8 @@
 from telebot import types
 from database import menu  # Предполагается, что у вас есть модуль menu для работы с меню
 
+
+
 basket = 0
 
 def start_markup():
@@ -134,4 +136,15 @@ def save_address(message, bot):
     address = message.text
     # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+
+    # Создаем кнопку "Возврат в основное меню"
+    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    btn_main_menu = types.KeyboardButton('Возврат в основное меню')
+    markup.add(btn_main_menu)
+
+    bot.send_message(message.chat.id, "Вы можете вернуться в основное меню", reply_markup=markup)
+
+
+    # Установите ваш секретный ключ Stripe
+
 
