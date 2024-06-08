@@ -42,28 +42,43 @@ def request_address(message):
 
 @bot.message_handler(func=lambda message: message.text == 'Оплата заказа')
 def handle_payment_button(message):
-    handle_payment(message)
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
+    markup.add('Наличными', 'Банковской картой')
+    bot.send_message(message.chat.id, "Выберите способ оплаты:", reply_markup=markup)
 
 
-@bot.message_handler(commands=['pay'])
-def handle_payment(message):
-    # Пример данных для оплаты (в реальном приложении эти данные нужно получить от пользователя безопасным способом)
-    user_id = message.from_user.id
-    order_id = 12345  # Это должен быть реальный ID заказа из базы данных
-    card_number = '4242424242424242'
-    exp_month = 12
-    exp_year = 2024
-    cvc = '123'
-    amount = 1000  # 1000 копеек = 10 рублей
+@bot.message_handler(func=lambda message: message.text == 'Наличными')
+def handle_cash_payment(message):
+    bot.send_message(message.chat.id, "Оплатите наличными курьеру в момент доставки")
 
-    # Вызов функции оплаты
-    result = process_payment(user_id, order_id, card_number, exp_month, exp_year, cvc, amount)
+@bot.message_handler(func=lambda message: message.text == 'Банковской картой')
+def handle_card_payment(message):
+    bot.send_message(message.chat.id, "Оплата прошла успешно")
 
-    # Обработка результата оплаты
-    if result['status'] == 'success':
-       bot.send_message(message.chat.id, f"Оплата успешна! Идентификатор платежа: {result['charge_id']}")
-    else:
-       bot.send_message(message.chat.id, f"Ошибка при оплате: {result['message']}")
+# @bot.message_handler(func=lambda message: message.text == 'Оплата заказа')
+# def handle_payment_button(message):
+#     handle_payment(message)
+#
+#
+# @bot.message_handler(commands=['pay'])
+# def handle_payment(message):
+#     # Пример данных для оплаты (в реальном приложении эти данные нужно получить от пользователя безопасным способом)
+#     user_id = message.from_user.id
+#     order_id = 12345  # Это должен быть реальный ID заказа из базы данных
+#     card_number = '4242424242424242'
+#     exp_month = 12
+#     exp_year = 2024
+#     cvc = '123'
+#     amount = 1000  # 1000 копеек = 10 рублей
+#
+#     # Вызов функции оплаты
+#     result = process_payment(user_id, order_id, card_number, exp_month, exp_year, cvc, amount)
+#
+#     # Обработка результата оплаты
+#     if result['status'] == 'success':
+#        bot.send_message(message.chat.id, f"Оплата успешна! Идентификатор платежа: {result['charge_id']}")
+#     else:
+#        bot.send_message(message.chat.id, f"Ошибка при оплате: {result['message']}")
 @bot.message_handler(func=lambda message: message.text == 'Возврат в основное меню')
 def return_to_main_menu(message):
     handlers.start_message(message, bot)
