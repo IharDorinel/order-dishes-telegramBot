@@ -40,6 +40,11 @@ def request_address(message):
     handlers.request_address(message, bot)
 
 
+@bot.message_handler(func=lambda message: message.text == 'Оплата заказа')
+def handle_payment_button(message):
+    handle_payment(message)
+
+
 @bot.message_handler(commands=['pay'])
 def handle_payment(message):
     # Пример данных для оплаты (в реальном приложении эти данные нужно получить от пользователя безопасным способом)
@@ -56,9 +61,9 @@ def handle_payment(message):
 
     # Обработка результата оплаты
     if result['status'] == 'success':
-        bot.send_message(message.chat.id, f"Оплата успешна! Идентификатор платежа: {result['charge_id']}")
+       bot.send_message(message.chat.id, f"Оплата успешна! Идентификатор платежа: {result['charge_id']}")
     else:
-        bot.send_message(message.chat.id, f"Ошибка при оплате: {result['message']}")
+       bot.send_message(message.chat.id, f"Ошибка при оплате: {result['message']}")
 @bot.message_handler(func=lambda message: message.text == 'Возврат в основное меню')
 def return_to_main_menu(message):
     handlers.start_message(message, bot)

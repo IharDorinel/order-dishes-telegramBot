@@ -43,7 +43,6 @@ def process_payment(user_id, order_id, card_number, exp_month, exp_year, cvc, am
     except Exception as e:
         # Обработка других ошибок
         return {"status": "error", "message": "An error occurred. Please try again later."}
-
 # Пример использования функции с тестовыми данными
 user_id = "example_user_id"
 order_id = "example_order_id"
