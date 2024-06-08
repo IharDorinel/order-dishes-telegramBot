@@ -4,12 +4,13 @@ import handlers
 from database import order as ord
 
 
-bot = telebot.TeleBot('Your_Token_Here')
+bot = telebot.TeleBot('TOKEN')
 
 
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
+    telebot.types.BotCommand('/look_feedback', 'Посмотреть отзывы о ресторане'),
     telebot.types.BotCommand('/support', 'Обратиться в поддержку')
 ]
 
@@ -22,12 +23,16 @@ def start_message(message):
 
 
 @bot.message_handler(commands=['feedback'])
-def start_message(message):
+def feedback_message(message):
     handlers.feedback_message(message, bot)
+
+@bot.message_handler(commands=['look_feedback'])
+def look_feedback_message(message):
+    handlers.look_for_feedback(message, bot)
 
 
 @bot.message_handler(commands=['support'])
-def start_message(message):
+def support_message(message):
     handlers.support_message(message, bot)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('category:'))
@@ -45,6 +50,7 @@ def back_to_category(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith('read_review:'))
 def read_dish_review(call):
     fb.read_dish_review(call, bot)
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_to_cart'))
 def handle_callback(call):
     dish_id = call.data.split(':')[1]

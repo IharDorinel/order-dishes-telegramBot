@@ -49,3 +49,28 @@ def get_feedback_by_dish_id(dish_id):
     conn.close()
 
     return avg_score, last_10_feedbacks
+
+def get_service_feedback():
+    # Подключение к базе данных
+    conn = sqlite3.connect('EasyEats.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT AVG(score) FROM feedback WHERE dish_id IS NULL")
+    service_avg_score = cursor.fetchone()[0]
+
+    query = """
+            SELECT user_id, feedback
+            FROM feedback
+            WHERE dish_id IS NULL
+            ORDER BY id DESC LIMIT 10
+            """
+    cursor.execute(query,)
+
+    # Получение последних 10 отзывов.
+    service_last_10_feedbacks = cursor.fetchall()
+    print(service_last_10_feedbacks)
+    print(service_avg_score)
+    # Закрытие соединения с базой данных
+    conn.close()
+
+    return service_avg_score, service_last_10_feedbacks
