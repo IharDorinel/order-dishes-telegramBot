@@ -41,7 +41,18 @@ def feedback_message(message, bot):
     # Регистрируем обработчик следующего шага
     bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
 
+def look_for_feedback(message, bot):
+    """
+    Отправляет сообщение с предложением посмотреть отзывы.
 
+    :param message: объект сообщения от пользователя
+    :param bot: объект бота для отправки сообщений
+    """
+    bot.send_message(
+        message.chat.id,
+        f'Здравствуйте, {message.from_user.first_name}! Вот последние отзывы, о сервисах ресторана.',)
+    # Регистрируем обработчик следующего шага
+    fb.look_service_feedback(message, bot)
 def support_message(message, bot):
     """
     Отправляет сообщение с предложением обратиться в поддержку.
@@ -111,12 +122,12 @@ def items_markup(category_name):
     return markup
 
 
-def dish_markup(dish_id):
+def dish_markup(message, dish_id):
     print('dish_id', dish_id)
     """Creates and returns the inline keyboard markup with options for a dish."""
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton('Добавить в корзину', callback_data=f"add_to_cart:{dish_id}"))
-    markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data='read_review'))
+    markup.add(types.InlineKeyboardButton('Прочитать отзыв', callback_data=f'read_review:{message.text}'))
     return markup
 
 
@@ -130,6 +141,7 @@ def command_message(message, bot):
     commands = {
         '/feedback': feedback_message,
         '/support': support_message,
+        '/look_feedback':look_for_feedback,
         '/start': start_message
     }
     if message.text in commands:
@@ -149,6 +161,12 @@ def start_perform_actions(message, bot):
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
         bot.send_message(message.chat.id, 'Функция статус заказа')
+
+    else:
+        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
+            command_message(message, bot)
+
+
 
 
 def category_selected(message, bot):
@@ -171,7 +189,7 @@ def category_selected(message, bot):
             )
             bot.register_next_step_handler(msg, lambda m: dish_selected(m, bot))
     except (IndexError, ValueError):
-        if message.text in ['/start', '/feedback', '/support']:
+        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
             command_message(message, bot)
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.', reply_markup=start_markup())
@@ -195,7 +213,7 @@ def dish_selected(message, bot):
         )
         bot.register_next_step_handler(msg, lambda m: category_selected(m, bot))
 
-    elif message.text in ['/start', '/feedback', '/support']:
+    elif message.text in ['/start', '/feedback','/look_feedback', '/support']:
         command_message(message, bot)
 
     else:
@@ -211,7 +229,7 @@ def dish_selected(message, bot):
                     message.chat.id,
                     photo=photo,
                     caption=caption,
-                    reply_markup=dish_markup(dish_id)
+                    reply_markup=dish_markup(message, dish_id)
                 )
         bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
 
@@ -222,12 +240,14 @@ def add_to_order(message, dish_id, order, bot):
             bot.send_message(message.chat.id, "Блюдо уже есть в заказе. Вы можете отредактировать количество в корзине.")
             return
     bot.send_message(message.chat.id, "Введите количество:")
+
     bot.register_next_step_handler(message, lambda m: process_amount(m, dish_id, order, bot))
 
 def process_amount(message, dish_id, order, bot):
     db = Database('EasyEats.db')
     try:
         amount = int(message.text)
+
         if amount <= 0:
             raise ValueError("Количество должно быть больше нуля.")
         #menu_item = db.cursor.execute("SELECT price FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
@@ -289,10 +309,6 @@ def process_delete(message, bot, order):
     except ValueError:
         bot.send_message(message.chat.id, "Введите корректный № позиции.")
 
-    # Обработчик команды /confirm для подтверждения заказа
-    @bot.message_handler(commands=['confirm'])
-    def confirm_order(message):
-        bot.send_message(message.chat.id, "Ваш заказ подтвержден. Спасибо за покупку!")
 
 def process_change(message, bot, order):
     try:
