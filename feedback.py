@@ -69,7 +69,7 @@ def choose_category(message, bot):
         else:
             raise ValueError
     except ValueError:
-        if category in ['/start', '/feedback', '/support']:
+        if category in ['/start', '/feedback','/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.')
@@ -130,7 +130,7 @@ def score_selected(message, bot, dish_id=None):
     :param dish_id: идентификатор блюда (если имеется)
     """
     feedback_text = message.text
-    if feedback_text in ['/start', '/feedback', '/support']:
+    if feedback_text in ['/start', '/feedback','/look_feedback', '/support']:
         handlers.command_message(message, bot)
     else:
         msg = bot.send_message(message.chat.id, 'Поставьте пожалуйста оценку от 1 до 5.',
@@ -158,7 +158,7 @@ def save_feedback(message, bot, feedback_text, dish_id=None):
         bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
 
     except ValueError:
-        if message.text in ['/start', '/feedback', '/support']:
+        if message.text in ['/start', '/feedback','/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             msg = bot.send_message(message.chat.id,
@@ -178,10 +178,33 @@ def read_dish_review(call, bot):
     if feedback[0] is None:
         bot.send_message(call.message.chat.id, f'Пока нет отзывов для {dish_name}. Ваш отзыв может быть первым.')
     else:
-        feedback_massage = ''
+        feedback_message = ''
         for feedback_entry in feedback[1]:
             user_id = feedback_entry[1]
             feedback_text = feedback_entry[0]
-            feedback_massage += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
+            feedback_message += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
         bot.send_message(call.message.chat.id, f"*Средняя оценка {dish_name} :* {feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
-                                               f"{feedback_massage}", parse_mode='Markdown')
+                                               f"{feedback_message}", parse_mode='Markdown')
+
+
+def look_service_feedback(message, bot):
+    """
+    Показывает отзывы о сервисе.
+
+    :param message:
+    :param bot:
+    :return:
+    """
+    service_feedback = DBfeedback.get_service_feedback()
+    if service_feedback[0] is None:
+        bot.send_message(message.chat.id, f'Пока нет отзывов о рестаране. Ваш отзыв может быть первым.')
+    else:
+        feedback_message = ''
+        for feedback_entry in service_feedback[1]:
+            user_id = feedback_entry[0]
+            feedback_text = feedback_entry[1]
+            feedback_message += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
+        bot.send_message(message.chat.id, f"*Средняя оценка сервиса :* {service_feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
+                                               f"{feedback_message}", parse_mode='Markdown', reply_markup=handlers.start_markup())
+
+    bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
