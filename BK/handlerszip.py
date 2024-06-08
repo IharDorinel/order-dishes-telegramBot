@@ -134,4 +134,3 @@ def save_address(message, bot):
     address = message.text
     # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
-
