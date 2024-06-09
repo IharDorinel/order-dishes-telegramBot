@@ -3,7 +3,7 @@ import telebot  # Импортируем библиотеку для работ�
 from oplata_zakaza import process_payment  # Импортируем функцию оплаты из файла oplata_zakaza.py
 
 # Создаём экземпляр бота (замените 'YOUR_BOT_API_TOKEN' на реальный токен вашего бота)
-bot = telebot.TeleBot('')
+bot = telebot.TeleBot('YOUR_BOT_API_TOKEN')
 
 @bot.message_handler(commands=['pay'])
 def handle_payment(message):
