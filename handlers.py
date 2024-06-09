@@ -1,6 +1,6 @@
 # Функции-обработчики для команд и нажатия кнопок
 import telebot
-from database import menu
+from database import menu, user
 from database.order import *
 from telebot import types
 import feedback as fb
@@ -47,13 +47,21 @@ def feedback_message(message, bot):
     :param message: объект сообщения от пользователя
     :param bot: объект бота для отправки сообщений
     """
-    bot.send_message(
-        message.chat.id,
-        f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
-        reply_markup=feedback_markup()
-    )
-    # Регистрируем обработчик следующего шага
-    bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
+    user_id = message.from_user.id
+    if user.user_exists(user_id):
+        bot.send_message(
+            message.chat.id,
+            f'Здравствуйте, {message.from_user.first_name}! Оставьте, пожалуйста, отзыв о нашем сервисе, выбрав категорию ниже.',
+            reply_markup=feedback_markup()
+        )
+        # Регистрируем обработчик следующего шага
+        bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
+    else:
+
+        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еше не '
+                                          'пользовались нашим сервисом. Мы будем рады если вы '
+                                          'воспользуетесь нашим сервисом.', reply_markup=start_markup())
+        bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 def look_for_feedback(message, bot):
     """
