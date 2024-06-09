@@ -75,15 +75,18 @@ def handle_callback(call):
 def delete_from_order(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
-    bot.send_message(call.message.chat.id, "Введите № позиции для удаления:")
-    bot.register_next_step_handler(call.message, lambda m: handlers.process_delete(m, bot, order))
+    if not order.positions:
+        bot.send_message(call.message.chat.id, "Ваша корзина пуста.")
+    else:
+        bot.send_message(call.message.chat.id, "Выберете позицию для удаления:", reply_markup=handlers.basket_markup(order))
+        bot.register_next_step_handler(call.message, lambda m: handlers.process_delete(m, bot, order))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('change_position'))
 def change_order(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
-    bot.send_message(call.message.chat.id, "Введите № позиции для изменения:")
+    bot.send_message(call.message.chat.id, "Введите № позиции для изменения:", reply_markup=handlers.basket_markup(order))
     bot.register_next_step_handler(call.message, lambda m: handlers.process_change(m, bot, order))
 
 

@@ -48,7 +48,7 @@ def get_feedback_by_dish_id(dish_id):
     # Закрытие соединения с базой данных
     conn.close()
 
-    return round(avg_score, 1), last_10_feedbacks
+    return avg_score, last_10_feedbacks
 
 def get_service_feedback():
     # Подключение к базе данных
