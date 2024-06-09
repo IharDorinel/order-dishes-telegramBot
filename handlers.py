@@ -60,7 +60,7 @@ def feedback_message(message, bot):
         bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
     else:
 
-        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еше не '
+        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еще не '
                                           'пользовались нашим сервисом. Мы будем рады если вы '
                                           'воспользуетесь нашим сервисом.', reply_markup=start_markup(message))
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
