@@ -2,6 +2,7 @@
 # import telebot
 from database import menu, user
 from database.order import *
+from database.user import *
 from telebot import types
 import feedback as fb
 
@@ -313,7 +314,7 @@ def process_amount(message, dish_id, order, bot):
             bot.send_message(message.chat.id, "Блюдо не найдено.")
     except ValueError:
         bot.send_message(message.chat.id, "Введите корректное количество.")
-
+    db.close()
 
 def order_markup():
     """Creates and returns the inline keyboard markup with options for a cart."""
@@ -335,6 +336,7 @@ def basket_markup(order):
         ind += 1
         print(order.dish_id)
         markup.add(f'{ind}. {dish_name}')
+    db.close()
     return markup
 
 
@@ -361,7 +363,7 @@ def show_order(message, bot, order):
                               f"(Итого: {item.total_price} руб.)\n")
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
-    # db.close()
+    db.close()
 
 
 def process_delete(message, bot, order):
@@ -380,7 +382,7 @@ def process_delete(message, bot, order):
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.",
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберите нужную позицию из списка.",
                          reply_markup=basket_markup(order))
         bot.register_next_step_handler(message, lambda m: process_delete(m, bot, order))
 
@@ -389,11 +391,11 @@ def process_change(message, bot, order):
     try:
         pos_id = int(message.text[0])
         pos_for_change = order.positions[pos_id - 1]
-        bot.send_message(message.chat.id, "Выберете новое количество или введите свое:", reply_markup=change_markup())
+        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:", reply_markup=change_markup())
         bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.",
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберите нужную позицию из списка.",
                          reply_markup=basket_markup(order))
         bot.register_next_step_handler(message, lambda m: process_change(m, bot, order))
 
@@ -419,6 +421,56 @@ def process_change_amount(message, bot, order, position):
 
 
 def display_order(message, bot):
+    try:
+        user_id = message.from_user.id
+        order = user_data[user_id]['order']
+        show_order(message, bot, order)
+    except KeyError:
+        bot.send_message(message.chat.id, "Ваша корзина пуста.")
+
+def check_adress(message, bot):
+    user_id = message.from_user.id
+    order = user_data[user_id]['order']
+    user_record = get_user(user_id)
+    if user_record:
+        order.address = user_record[3]
+    if not order.address:
+        request_address(message, bot)
+    else:
+        msg = bot.send_message(message.chat.id, f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
+                               reply_markup=address_markup())
+        #bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+
+def address_markup():
+    """Creates and returns the inline keyboard markup for entering the delivery address."""
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    markup.add(types.KeyboardButton('Введите адрес доставки'))
+    return markup
+
+
+def request_address(message, bot):
+    """Function to request delivery address from the user."""
+    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:", reply_markup=address_markup())
+    bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+
+
+def save_address(message, bot):
+    """Function to save user's delivery address."""
+    user_id = message.from_user.id
+    address = message.text
+    # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
+    bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+
+def finalize_order(message, bot):
+    user_id = message.from_user.id
+    order = user_data[user_id]['order']
+    order.status = 'in process'   # ?????? или оплачен или в обработке или что?
+    db = Database('EasyEats.db')
+    db.save_order(order)  # сохраняем заголовок и позиции в базе данных
+    db.close()
+    save_user(order)      # сохраняем данные пользователя в базе данных
+    order.clear()
+    bot.send_message(message.chat.id, "Ваш заказ принят. Спасибо за покупку!")
     try:
         user_id = message.from_user.id
         order = user_data[user_id]['order']
