@@ -358,7 +358,7 @@ def process_delete(message, bot, order):
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.", reply_markup=basket_markup(order))
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберите нужную позицию из списка.", reply_markup=basket_markup(order))
         bot.register_next_step_handler(message, lambda m: process_delete(m, bot, order))
 
     # Обработчик команды /confirm для подтверждения заказа
@@ -370,11 +370,11 @@ def process_change(message, bot, order):
     try:
         pos_id = int(message.text[0])
         pos_for_change = order.positions[pos_id-1]
-        bot.send_message(message.chat.id, "Выберете новое количество или введите свое:", reply_markup=change_markup())
+        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:", reply_markup=change_markup())
         bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.", reply_markup=basket_markup(order))
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберите нужную позицию из списка.", reply_markup=basket_markup(order))
         bot.register_next_step_handler(message, lambda m: process_change(m, bot, order))
 def process_change_amount(message, bot, order, position):
     db = Database('EasyEats.db')
