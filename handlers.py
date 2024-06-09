@@ -6,6 +6,7 @@ from database.user import *
 from telebot import types
 import feedback as fb
 
+
 # Глобальная переменная для хранения количества товаров в корзине
 
 
@@ -419,9 +420,12 @@ def process_change_amount(message, bot, order, position):
 
 
 def display_order(message, bot):
-    user_id = message.from_user.id
-    order = user_data[user_id]['order']
-    show_order(message, bot, order)
+    try:
+        user_id = message.from_user.id
+        order = user_data[user_id]['order']
+        show_order(message, bot, order)
+    except KeyError:
+        bot.send_message(message.chat.id, "Ваша корзина пуста.")
 
 def check_adress(message, bot):
     user_id = message.from_user.id
