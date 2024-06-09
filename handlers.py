@@ -4,7 +4,8 @@ from database import menu, user
 from database.order import *
 from database.user import *
 from telebot import types
-import feedback as fb
+from feedback as fb
+
 
 
 # Глобальная переменная для хранения количества товаров в корзине
@@ -436,20 +437,22 @@ def check_adress(message, bot):
     if not order.address:
         request_address(message, bot)
     else:
-        msg = bot.send_message(message.chat.id, f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
+        msg = bot.send_message(message.chat.id,
+                               f'Ваш сохраненный адрес: {order.address}. Хотите использовать его? (да/нет)',
                                reply_markup=address_markup())
-        #bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
 
-def address_markup():
-    """Creates and returns the inline keyboard markup for entering the delivery address."""
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    markup.add(types.KeyboardButton('Введите адрес доставки'))
-    return markup
+        bot.register_next_step_handler(msg, lambda m: handle_address_confirmation(m, bot))
 
+# Функция для обработки ответа пользователя
+def handle_address_confirmation(message, bot):
+    if message.text.lower() in ['да']:
+        bot.send_message(message.chat.id, "Адрес использован для доставки.")
+    else:
+        request_address(message, bot)
 
 def request_address(message, bot):
     """Function to request delivery address from the user."""
-    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:", reply_markup=address_markup())
+    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:")
     bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
 
 
@@ -457,11 +460,21 @@ def save_address(message, bot):
     """Function to save user's delivery address."""
     user_id = message.from_user.id
     address = message.text
-    # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
+    # Обновляем адрес user_data
+    if user_id in user_data:
+        user_data[user_id]['order'].address = address
+    else:
+        user_data[user_id] = {'order': Order(address=address)}
+
+    # Сохраняем адрес в базе данных
+    db = Database('EasyEats.db')
+    db.update_user_address(user_id, address)
+
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
     choose_payment_method(message, bot)  # Вызывание функции выбора формы оплаты после сохранения адреса
+
+# Функция для выбора формы оплаты
 def choose_payment_method(message, bot):
-    """Function to choose payment method: cash or card."""
     user_id = message.from_user.id
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     cash_button = types.KeyboardButton('Наличные')
@@ -469,8 +482,8 @@ def choose_payment_method(message, bot):
     markup.add(cash_button, card_button)
     bot.send_message(message.chat.id, "Пожалуйста, выберите форму оплаты:", reply_markup=markup)
 
+# Обработчик выбора формы оплаты
 def process_payment_method(message, bot):
-    """Function to process the selected payment method."""
     user_id = message.from_user.id
     payment_method = message.text
     if payment_method in ['Наличные', 'Банковская карта']:
@@ -480,7 +493,7 @@ def process_payment_method(message, bot):
     else:
         bot.send_message(message.chat.id, "Выберите корректную форму оплаты.")
         choose_payment_method(message, bot)
-        
+
 def finalize_order(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']
