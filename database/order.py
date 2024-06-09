@@ -5,6 +5,7 @@ import datetime
 
 user_data = {}
 
+
 # Класс для работы с базой данных
 
 class Database:
@@ -48,7 +49,9 @@ class Database:
                      VALUES (?, ?, ?, ?, ?, ?, ?)'''
         order.create_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время создания заказа
         order.update_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время изменения заказа
-        self.cursor.execute(sql, (order.user_telegram, order.total_price, order.address, order.status, order.create_at, order.update_at, order.payment_method))
+        self.cursor.execute(sql, (
+        order.user_telegram, order.total_price, order.address, order.status, order.create_at, order.update_at,
+        order.payment_method))
         self.conn.commit()
         order_id = self.cursor.lastrowid
         self.save_order_position(order_id, order.positions)
@@ -73,25 +76,31 @@ class Database:
 
 # Класс для хранения состояния текущего заказа
 class Order:
-    def __init__(self, user_telegram):   #
-        #self.order_id = 1  # Уникальный идентификатор заказа (в реальных приложениях создавать уникальный ID для каждого заказа)
+    def __init__(self, user_telegram):  #
+        # self.order_id = 1  # Уникальный идентификатор заказа
+        # (в реальных приложениях создавать уникальный ID для каждого заказа)
         self.user_telegram = user_telegram
         self.positions = []
         self.total_price = 0
         self.adress = ''
         self.status = 'Новый'
         self.payment_method = ''
-        self.create_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время создания заказа можно изменить при сохранении
+        self.create_at = datetime.datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S")  # Дата и время создания заказа можно изменить при сохранении
         self.update_at = self.create_at
+
     def clear(self):
         self.positions = []
         self.total_price = 0
+
     def add_position(self, position):
         self.positions.append(position)
         self.total_price += position.total_price
+
     def remove_position(self, position):
         self.positions.remove(position)
         self.total_price -= position.total_price
+
     def recalculate_total_price(self):
         self.total_price = 0
         for position in self.positions:
@@ -104,6 +113,7 @@ class Position:
         self.amount = amount
         self.price = price
         self.total_price = amount * price
+
     def change_amount(self, new_amount):
         self.amount = new_amount
         self.total_price = new_amount * self.price
