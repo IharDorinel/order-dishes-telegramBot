@@ -188,6 +188,9 @@ def start_perform_actions(message, bot):
     else:
         if message.text in ['/start', '/basket', '/feedback','/look_feedback', '/support']:
             command_message(message, bot)
+        else:
+            bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.', reply_markup=start_markup())
+            bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 
 
@@ -242,6 +245,7 @@ def dish_selected(message, bot):
     else:
         dish_name = message.text
         details = menu.dish_details(dish_name)
+
         if details:
             dish_id, description, price, image_url = details
             caption = f"{dish_name}\n\n{description}\n\nЦена: {price} руб."
@@ -254,7 +258,10 @@ def dish_selected(message, bot):
                     caption=caption,
                     reply_markup=dish_markup(message, dish_id)
                 )
-        bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+        else:
+            bot.send_message(message.chat.id, 'Блюдо не найдено. Попробуйте ещё раз.')
+            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
 
 
 def add_to_order(message, dish_id, order, bot):
@@ -314,8 +321,7 @@ def basket_markup(order):
 
 def change_markup():
     markup = fb.feedback_score_markup()
-    button = ['Другое число']
-    markup.add(*button)
+
     return markup
 def show_order(message, bot, order):
     db = Database('EasyEats.db')
@@ -333,7 +339,7 @@ def show_order(message, bot, order):
             order_details += f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. (Итого: {item.total_price} руб.)\n"
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup(order))
-    db.close()
+    #db.close()
 
 
 def process_delete(message, bot, order):
@@ -352,8 +358,8 @@ def process_delete(message, bot, order):
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Введите корректный № позиции.")
-
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.", reply_markup=basket_markup(order))
+        bot.register_next_step_handler(message, lambda m: process_delete(m, bot, order))
 
     # Обработчик команды /confirm для подтверждения заказа
     @bot.message_handler(commands=['confirm'])
@@ -364,31 +370,30 @@ def process_change(message, bot, order):
     try:
         pos_id = int(message.text[0])
         pos_for_change = order.positions[pos_id-1]
-        bot.send_message(message.chat.id, "Выберете новое количество:", reply_markup=change_markup())
+        bot.send_message(message.chat.id, "Выберете новое количество или введите свое:", reply_markup=change_markup())
         bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
 
     except ValueError:
-        bot.send_message(message.chat.id, "Введите корректный № позиции.")
-
+        bot.send_message(message.chat.id, "Ошибка ввода. Выберете нужную позицию из списка.", reply_markup=basket_markup(order))
+        bot.register_next_step_handler(message, lambda m: process_change(m, bot, order))
 def process_change_amount(message, bot, order, position):
     db = Database('EasyEats.db')
     try:
-        if message.text.strip().lower() == "другое число":
-            bot.send_message(message.chat.id, "Введите нужное количество.")
-            bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, position))
-        else:
-            amount = int(message.text.strip())
-            if amount <= 0:
-                raise ValueError("Количество должно быть больше нуля.")
-            position.change_amount(amount)
-            order.recalculate_total_price()
-            bot.send_message(message.chat.id, "Позиция изменена.", reply_markup=start_markup())
-            display_order(message, bot)
-            bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
+
+        amount = int(message.text.strip())
+        if amount <= 0:
+            raise ValueError("Количество должно быть больше нуля.")
+        position.change_amount(amount)
+        order.recalculate_total_price()
+        bot.send_message(message.chat.id, "Позиция изменена.", reply_markup=start_markup())
+        display_order(message, bot)
+        bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
     except ValueError:
-        bot.send_message(message.chat.id, "Введите корректное количество.")
+        bot.send_message(message.chat.id, "Введите корректное количество.(число)")
+        bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, position))
     except Exception as e:
-        bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
+        bot.send_message(message.chat.id, f"Произошла ошибка: {e}", reply_markup=start_markup())
+        bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 
 def display_order(message, bot):
