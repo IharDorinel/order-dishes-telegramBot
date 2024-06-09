@@ -2,9 +2,10 @@ import telebot
 import feedback as fb
 import handlers
 from database import user, order as ord
-from database import order as ord
+
 
 from telebot import types
+
 
 bot = telebot.TeleBot('Your_Token_Here')
 
@@ -33,7 +34,6 @@ def basket_message(message):
 @bot.message_handler(commands=['feedback'])
 def feedback_message(message):
     handlers.feedback_message(message, bot)
-
 
 
 @bot.message_handler(commands=['look_feedback'])
@@ -83,7 +83,7 @@ def delete_from_order(call):
     if not order.positions:
         bot.send_message(call.message.chat.id, "Ваша корзина пуста.")
     else:
-        bot.send_message(call.message.chat.id, "Выберите позицию для удаления:",
+        bot.send_message(call.message.chat.id, "Выберете позицию для удаления:",
                          reply_markup=handlers.basket_markup(order))
         bot.register_next_step_handler(call.message, lambda m: handlers.process_delete(m, bot, order))
 
@@ -92,7 +92,7 @@ def delete_from_order(call):
 def change_order(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
-    bot.send_message(call.message.chat.id, "Выберите позицию для изменения:",
+    bot.send_message(call.message.chat.id, "Выберете позицию для изменения:",
                      reply_markup=handlers.basket_markup(order))
     bot.register_next_step_handler(call.message, lambda m: handlers.process_change(m, bot, order))
 
@@ -102,7 +102,9 @@ def clear_cart(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
     order.clear()
-    bot.send_message(call.message.chat.id, "Корзина очищена")
+    bot.send_message(call.message.chat.id, "Корзина очищена", reply_markup=handlers.start_markup(call.message))
+    # handlers.basket_message(call.message, bot)
+    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))
