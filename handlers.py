@@ -459,7 +459,28 @@ def save_address(message, bot):
     address = message.text
     # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+    choose_payment_method(message, bot)  # Вызывание функции выбора формы оплаты после сохранения адреса
+def choose_payment_method(message, bot):
+    """Function to choose payment method: cash or card."""
+    user_id = message.from_user.id
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    cash_button = types.KeyboardButton('Наличные')
+    card_button = types.KeyboardButton('Банковская карта')
+    markup.add(cash_button, card_button)
+    bot.send_message(message.chat.id, "Пожалуйста, выберите форму оплаты:", reply_markup=markup)
 
+def process_payment_method(message, bot):
+    """Function to process the selected payment method."""
+    user_id = message.from_user.id
+    payment_method = message.text
+    if payment_method in ['Наличные', 'Банковская карта']:
+        user_data[user_id]['payment_method'] = payment_method
+        bot.send_message(message.chat.id, f"Форма оплаты выбрана: {payment_method}")
+        finalize_order(message, bot)  # Перенаправление к финализации заказа после выбора формы оплаты
+    else:
+        bot.send_message(message.chat.id, "Выберите корректную форму оплаты.")
+        choose_payment_method(message, bot)
+        
 def finalize_order(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']
