@@ -19,7 +19,8 @@ def staus_check(user_id):
 
     cursor.execute("SELECT order_id, total_price, status, create_at, "
                    "payment_method FROM order_header WHERE user_id = ? AND status != ?", (user_id, 'Выполнен'))
-    result = cursor.fetchone()
+    result = cursor.fetchall()
+    print(result)
 
     conn.close()
 

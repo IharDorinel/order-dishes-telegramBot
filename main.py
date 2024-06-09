@@ -7,7 +7,7 @@ from database import user, order as ord
 from telebot import types
 
 
-bot = telebot.TeleBot('Your_Token_Here')
+bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
 
 
 commands = [
