@@ -314,7 +314,7 @@ def process_amount(message, dish_id, order, bot):
             bot.send_message(message.chat.id, "Блюдо не найдено.")
     except ValueError:
         bot.send_message(message.chat.id, "Введите корректное количество.")
-
+    db.close()
 
 def order_markup():
     """Creates and returns the inline keyboard markup with options for a cart."""
@@ -336,6 +336,7 @@ def basket_markup(order):
         ind += 1
         print(order.dish_id)
         markup.add(f'{ind}. {dish_name}')
+    db.close()
     return markup
 
 
@@ -362,7 +363,7 @@ def show_order(message, bot, order):
                               f"(Итого: {item.total_price} руб.)\n")
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
-    # db.close()
+    db.close()
 
 
 def process_delete(message, bot, order):
