@@ -6,7 +6,7 @@ from oplata_zakaza import process_payment  # Импортируем функци
 import handlers
 
 # Используем ваш реальный API токен
-bot = telebot.TeleBot('6780123582:AAEyvSQofZcMq2FUnMQNdUQUgUBFMxSzlQ8')
+bot = telebot.TeleBot('')
 
 commands = [
     telebot.types.BotCommand('/start', 'Запустить бота'),
