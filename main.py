@@ -1,7 +1,7 @@
 import telebot
 import feedback as fb
 import handlers
-from database import user, order as ord
+from database import order as ord
 
 bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
 
@@ -29,7 +29,6 @@ def basket_message(message):
 @bot.message_handler(commands=['feedback'])
 def feedback_message(message):
     handlers.feedback_message(message, bot)
-
 
 
 @bot.message_handler(commands=['look_feedback'])
@@ -98,7 +97,9 @@ def clear_cart(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
     order.clear()
-    bot.send_message(call.message.chat.id, "Корзина очищена")
+    bot.send_message(call.message.chat.id, "Корзина очищена", reply_markup=handlers.start_markup(call.message))
+    # handlers.basket_message(call.message, bot)
+    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))

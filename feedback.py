@@ -27,7 +27,7 @@ def dish_category_markup(message, bot):
     # Загружаем список категорий из базы данных
     categories_list = menu.categories()
     # Создаем кнопки
-    buttons = [types.InlineKeyboardButton(f"{e+n}", callback_data=f"category:{n}") for e, n in categories_list]
+    buttons = [types.InlineKeyboardButton(f"{e + n}", callback_data=f"category:{n}") for e, n in categories_list]
     markup.add(*buttons)
 
     bot.send_message(
@@ -54,7 +54,7 @@ def choose_category(message, bot):
                 'Вы можете написать отзыв о доставке, работе поддержки и общие впечатления\n'
                 'Ваше мнение важно для нас.'
             )
-            bot.register_next_step_handler(msg, lambda msg: score_selected(msg, bot))
+            bot.register_next_step_handler(msg, lambda m: score_selected(m, bot))
 
         elif category == 'О блюдах':
             dish_category_markup(message, bot)
@@ -69,7 +69,7 @@ def choose_category(message, bot):
         else:
             raise ValueError
     except ValueError:
-        if category in ['/start','/basket', '/feedback','/look_feedback', '/support']:
+        if category in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             bot.send_message(message.chat.id, 'Ошибка ввода.')
@@ -118,7 +118,7 @@ def fb_dish_selected(call, bot):
         message_id=call.message.message_id,
 
     )
-    bot.register_next_step_handler(msg, lambda msg: score_selected(msg, bot, dish_id))
+    bot.register_next_step_handler(msg, lambda m: score_selected(m, bot, dish_id))
 
 
 def score_selected(message, bot, dish_id=None):
@@ -130,12 +130,12 @@ def score_selected(message, bot, dish_id=None):
     :param dish_id: идентификатор блюда (если имеется)
     """
     feedback_text = message.text
-    if feedback_text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
+    if feedback_text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
         handlers.command_message(message, bot)
     else:
         msg = bot.send_message(message.chat.id, 'Поставьте пожалуйста оценку от 1 до 5.',
                                reply_markup=feedback_score_markup())
-        bot.register_next_step_handler(msg, lambda msg: save_feedback(msg, bot, feedback_text, dish_id))
+        bot.register_next_step_handler(msg, lambda m: save_feedback(m, bot, feedback_text, dish_id))
 
 
 def save_feedback(message, bot, feedback_text, dish_id=None):
@@ -154,16 +154,17 @@ def save_feedback(message, bot, feedback_text, dish_id=None):
         DBfeedback.add_feedback(user_id, dish_id, score, feedback_text)
 
         bot.send_message(user_id, 'Спасибо за вашу оценку и отзыв! Мы ценим ваше мнение.',
-                         reply_markup=handlers.start_markup())
+                         reply_markup=handlers.start_markup(message))
         bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
 
     except ValueError:
-        if message.text in ['/start','/basket', '/feedback','/look_feedback', '/support']:
+        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
             handlers.command_message(message, bot)
         else:
             msg = bot.send_message(message.chat.id,
                                    'Вы ввели некорректное значение. Пожалуйста, введите число от 1 до 5.')
-            bot.register_next_step_handler(msg, lambda msg: save_feedback(msg, bot, feedback_text, dish_id))
+            bot.register_next_step_handler(msg, lambda m: save_feedback(m, bot, feedback_text, dish_id))
+
 
 def read_dish_review(call, bot):
     """
@@ -183,8 +184,9 @@ def read_dish_review(call, bot):
             user_id = feedback_entry[1]
             feedback_text = feedback_entry[0]
             feedback_message += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
-        bot.send_message(call.message.chat.id, f"*Средняя оценка {dish_name} :* {feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
-                                               f"{feedback_message}", parse_mode='Markdown')
+        bot.send_message(call.message.chat.id,
+                         f"*Средняя оценка {dish_name} :* {feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
+                         f"{feedback_message}", parse_mode='Markdown')
 
 
 def look_service_feedback(message, bot):
@@ -204,7 +206,8 @@ def look_service_feedback(message, bot):
             user_id = feedback_entry[0]
             feedback_text = feedback_entry[1]
             feedback_message += f"*{bot.get_chat(user_id).first_name}* :\n{feedback_text}\n\n"
-        bot.send_message(message.chat.id, f"*Средняя оценка сервиса :* {service_feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
-                                               f"{feedback_message}", parse_mode='Markdown', reply_markup=handlers.start_markup())
+        bot.send_message(message.chat.id,
+                         f"*Средняя оценка сервиса :* {service_feedback[0]}\n\n*Вот последние оставленные отзывы:* \n\n"
+                         f"{feedback_message}", parse_mode='Markdown', reply_markup=handlers.start_markup(message))
 
     bot.register_next_step_handler(message, lambda m: handlers.start_perform_actions(m, bot))
