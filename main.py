@@ -2,6 +2,7 @@ import telebot
 import feedback as fb
 import handlers
 from database import user, order as ord
+import admin_func as ad
 
 
 from telebot import types
@@ -17,7 +18,8 @@ commands = [
     telebot.types.BotCommand('/basket', 'Корзина'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
     telebot.types.BotCommand('/look_feedback', 'Посмотреть отзывы о ресторане'),
-    telebot.types.BotCommand('/support', 'Обратиться в поддержку')
+    telebot.types.BotCommand('/support', 'Обратиться в поддержку'),
+    telebot.types.BotCommand('/admin', 'Администратор')
 ]
 
 bot.set_my_commands(commands)
@@ -46,6 +48,11 @@ def look_feedback_message(message):
 @bot.message_handler(commands=['support'])
 def support_message(message):
     handlers.support_message(message, bot)
+
+
+@bot.message_handler(commands=['admin'])
+def admin_message(message):
+    ad.admin_message(message, bot)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('category:'))
@@ -105,6 +112,8 @@ def clear_cart(call):
     order = ord.user_data[user_id]['order']
     order.clear()
     bot.send_message(call.message.chat.id, "Корзина очищена", reply_markup=handlers.start_markup(call.message))
+    # handlers.basket_message(call.message, bot)
+    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))

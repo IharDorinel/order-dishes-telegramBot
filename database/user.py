@@ -36,9 +36,39 @@ def user_exists(user_id):
     conn = sqlite3.connect('EasyEats.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?) AS user_exists;", (user_id,))
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM users WHERE telegram = ?) AS user_exists;", (user_id,))
     result = cursor.fetchone()
 
     conn.close()
 
     return result[0] == 1
+
+def is_admin(user_id):
+    db = sqlite3.connect('EasyEats.db')
+    cursor = db.cursor()
+    cursor.execute("SELECT admin FROM users WHERE telegram = ?", (user_id,))
+    result = cursor.fetchone()
+    print(result)
+    db.close()
+    return int(result[0]) == 1 if result else False
+
+
+def get_admin_id():
+    try:
+        db = sqlite3.connect('EasyEats.db')
+        cursor = db.cursor()
+        cursor.execute("SELECT telegram FROM users WHERE admin = 1")
+        result = cursor.fetchone()
+        db.close()
+        return result[0] if result else None
+    except sqlite3.Error as e:
+        print(f"Ошибка при работе с базой данных: {e}")
+        return None
+
+def get_user_id(order_id):
+    db = sqlite3.connect('EasyEats.db')
+    cursor = db.cursor()
+    cursor.execute("SELECT user_id FROM order_header WHERE order_id = ?", (order_id,))
+    result = cursor.fetchone()
+    db.close()
+    return result[0] if result else None
