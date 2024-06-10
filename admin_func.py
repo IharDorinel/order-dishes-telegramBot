@@ -71,7 +71,7 @@ def handle_order_selection(message, bot):
 def change_order_status(message,order_id, bot):
     try:
         markup = types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
-        markup.add('Обрабатывается', 'В пути', 'Выполнен', 'Отменен')
+        markup.add('В пути', 'Выполнен', 'Отменен')
         msg = bot.send_message(
             message.chat.id,
             "Выберите новый статус для заказа:",

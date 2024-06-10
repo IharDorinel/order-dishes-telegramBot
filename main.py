@@ -2,13 +2,14 @@ import telebot
 import feedback as fb
 import handlers
 from database import user, order as ord
+import admin_func as ad
 
 
 from telebot import types
 
 
 
-bot = telebot.TeleBot('Your_token')
+bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
 
 
 
@@ -17,7 +18,8 @@ commands = [
     telebot.types.BotCommand('/basket', 'Корзина'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
     telebot.types.BotCommand('/look_feedback', 'Посмотреть отзывы о ресторане'),
-    telebot.types.BotCommand('/support', 'Обратиться в поддержку')
+    telebot.types.BotCommand('/support', 'Обратиться в поддержку'),
+    telebot.types.BotCommand('/admin', 'Администратор')
 ]
 
 bot.set_my_commands(commands)
@@ -46,6 +48,11 @@ def look_feedback_message(message):
 @bot.message_handler(commands=['support'])
 def support_message(message):
     handlers.support_message(message, bot)
+
+
+@bot.message_handler(commands=['admin'])
+def admin_message(message):
+    ad.admin_message(message, bot)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('category:'))

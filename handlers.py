@@ -6,6 +6,9 @@ from database.user import *
 from telebot import types
 import feedback as fb
 from telebot import types
+import staus_check as sc
+import admin_func as ad
+import support as su
 
 
 
@@ -93,6 +96,7 @@ def support_message(message, bot):
         message.chat.id,
         f'Здравствуйте, {message.from_user.first_name}! Здесь вы можете обратиться за поддержкой.'
     )
+    su.support_message_to_admin(message, bot)
 
 
 def feedback_markup():
@@ -108,24 +112,25 @@ def feedback_markup():
 
 def start_markup(message):
     """
-    Создает и возвращает разметку клавиатуры для начального меню.
+    Создает и возвращает разметку клавиатуры для выбора действия.
 
     :return: объект ReplyKeyboardMarkup
     """
+    user_id = message.chat.id
     try:
-        user_id = message.from_user.id
         order = user_data[user_id]['order']
         basket = len(order.positions)
-        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
-        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
-                   '\U0001F6F5 Посмотреть статус заказа')
-        return markup
     except KeyError:
         basket = 0
-        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
-        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
-                   '\U0001F6F5 Посмотреть статус заказа')
-        return markup
+
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
+    markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
+               '\U0001F6F5 Посмотреть статус заказа')
+
+    if user.is_admin(user_id):
+        markup.add('\U0001F6E0 Админ панель')
+
+    return markup
 
 
 def category_markup():
@@ -182,7 +187,8 @@ def command_message(message, bot):
         '/basket': basket_message,
         '/support': support_message,
         '/look_feedback': look_for_feedback,
-        '/start': start_message
+        '/start': start_message,
+        '/admin': ad.admin_message
     }
     if message.text in commands:
         commands[message.text](message, bot)
@@ -200,11 +206,18 @@ def start_perform_actions(message, bot):
         basket_message(message, bot)
 
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
-        bot.send_message(message.chat.id, 'Функция статус заказа')
+        sc.status_check(message, bot)
+
+    elif message.text == '\U0001F6E0 Админ панель':
+        ad.admin_message(message, bot)
 
     else:
-        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
+        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/admin', '/support']:
             command_message(message, bot)
+        # else:
+        # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
+        # reply_markup=start_markup(message, bot))
+        # bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
         # else:
         # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
         # reply_markup=start_markup(message, bot))
@@ -368,9 +381,9 @@ def show_order(message, bot, order):
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
 
         # bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
-        msg = bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        #msg = bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
         #bot.register_next_step_handler(msg, lambda m: check_address(m, bot, order))
-        bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+        #bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
 
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
     db.close()
@@ -524,7 +537,7 @@ def finalize_order(message, bot, user_id):
     print('finalize_order is running')
     #user_id = message.from_user.id
     order = user_data[user_id]['order']
-    order.status = 'in process'   # ?????? или оплачен или в обработке или что?
+    order.status = 'Обрабатывается'   # ?????? или оплачен или в обработке или что?
     db = Database('EasyEats.db')
     db.save_order(order)  # сохраняем заголовок и позиции в базе данных
     db.close()
