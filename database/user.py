@@ -18,13 +18,13 @@ def save_user(order):
     cursor.execute(sql, (order.user_telegram,))
     user = cursor.fetchone()
     if user:     # обновим запись
-        sql = '''UPDATE users SET address = ? WHERE telegram = ?'''
+        sql = '''UPDATE users SET adress = ? WHERE telegram = ?'''
         cursor.execute(sql, (order.address, order.user_telegram))
         conn.commit()
         conn.close()
         return
     else:      # добавим запись
-        sql = '''INSERT INTO users (admin,telegram, address) VALUES (?, ?, ?, ?)'''
+        sql = '''INSERT INTO users (admin,telegram, adress) VALUES (?, ?, ?)'''
         cursor.execute(sql, (0, order.user_telegram, order.address))
         conn.commit()
         conn.close()
