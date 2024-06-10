@@ -68,9 +68,7 @@ def get_service_feedback():
 
     # Получение последних 10 отзывов.
     service_last_10_feedbacks = cursor.fetchall()
-    print(service_last_10_feedbacks)
-    print(service_avg_score)
     # Закрытие соединения с базой данных
     conn.close()
 
-    return round(service_avg_score, 1), service_last_10_feedbacks
+    return service_avg_score, service_last_10_feedbacks
