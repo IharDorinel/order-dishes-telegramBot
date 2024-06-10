@@ -6,6 +6,8 @@ from database.user import *
 from telebot import types
 import feedback as fb
 import staus_check as sc
+import admin_func as ad
+import support as su
 
 
 # Глобальная переменная для хранения количества товаров в корзине
@@ -61,9 +63,9 @@ def feedback_message(message, bot):
         bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
     else:
 
-        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еше не '
-                                          'пользовались нашим сервисом. Мы будем рады если вы '
-                                          'воспользуетесь нашим сервисом.', reply_markup=start_markup(message))
+        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв, если еще не '
+                                          'пользовались нашим сервисом. Мы будем рады помочь вам',
+                         reply_markup=start_markup(message))
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 
@@ -92,6 +94,7 @@ def support_message(message, bot):
         message.chat.id,
         f'Здравствуйте, {message.from_user.first_name}! Здесь вы можете обратиться за поддержкой.'
     )
+    su.support_message_to_admin(message, bot)
 
 
 def feedback_markup():
@@ -107,24 +110,25 @@ def feedback_markup():
 
 def start_markup(message):
     """
-    Создает и возвращает разметку клавиатуры для начального меню.
+    Создает и возвращает разметку клавиатуры для выбора действия.
 
     :return: объект ReplyKeyboardMarkup
     """
+    user_id = message.chat.id
     try:
-        user_id = message.from_user.id
         order = user_data[user_id]['order']
         basket = len(order.positions)
-        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
-        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
-                   '\U0001F6F5 Посмотреть статус заказа')
-        return markup
     except KeyError:
         basket = 0
-        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
-        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
-                   '\U0001F6F5 Посмотреть статус заказа')
-        return markup
+
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
+    markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
+               '\U0001F6F5 Посмотреть статус заказа')
+
+    if user.is_admin(user_id):
+        markup.add('\U0001F6E0 Админ панель')
+
+    return markup
 
 
 def category_markup():
@@ -181,7 +185,8 @@ def command_message(message, bot):
         '/basket': basket_message,
         '/support': support_message,
         '/look_feedback': look_for_feedback,
-        '/start': start_message
+        '/start': start_message,
+        '/admin': ad.admin_message
     }
     if message.text in commands:
         commands[message.text](message, bot)
@@ -199,10 +204,13 @@ def start_perform_actions(message, bot):
         basket_message(message, bot)
 
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
-        sc.staus_check(message, bot)
+        sc.status_check(message, bot)
+
+    elif message.text == '\U0001F6E0 Админ панель':
+        ad.admin_message(message, bot)
 
     else:
-        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
+        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/admin', '/support']:
             command_message(message, bot)
         # else:
         # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
@@ -471,6 +479,9 @@ def finalize_order(message, bot):
     save_user(order)  # сохраняем данные пользователя в базе данных
     order.clear()
     bot.send_message(message.chat.id, "Ваш заказ принят. Спасибо за покупку!")
+    # Уведомление админа о новом заказе
+    admin_id = user.get_admin_id()
+    bot.send_message(admin_id, "Поступил новый заказ. Проверьте админ-панель для получения деталей.")
     try:
         user_id = message.from_user.id
         order = user_data[user_id]['order']

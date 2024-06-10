@@ -117,3 +117,11 @@ class Position:
     def change_amount(self, new_amount):
         self.amount = new_amount
         self.total_price = new_amount * self.price
+
+
+def update_order_status(order_id, new_status):
+    db = sqlite3.connect('EasyEats.db')
+    cursor = db.cursor()
+    cursor.execute("UPDATE order_header SET status = ? WHERE order_id = ?", (new_status, order_id))
+    db.commit()
+    db.close()
