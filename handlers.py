@@ -5,9 +5,8 @@ from database.order import *
 from database.user import *
 from telebot import types
 import feedback as fb
-import staus_check as sc
-import admin_func as ad
-import support as su
+from telebot import types
+
 
 
 # Глобальная переменная для хранения количества товаров в корзине
@@ -63,9 +62,9 @@ def feedback_message(message, bot):
         bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
     else:
 
-        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв, если еще не '
-                                          'пользовались нашим сервисом. Мы будем рады помочь вам',
-                         reply_markup=start_markup(message))
+        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еще не '
+                                          'пользовались нашим сервисом. Мы будем рады если вы '
+                                          'воспользуетесь нашим сервисом.', reply_markup=start_markup(message))
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
 
 
@@ -94,7 +93,6 @@ def support_message(message, bot):
         message.chat.id,
         f'Здравствуйте, {message.from_user.first_name}! Здесь вы можете обратиться за поддержкой.'
     )
-    su.support_message_to_admin(message, bot)
 
 
 def feedback_markup():
@@ -110,25 +108,24 @@ def feedback_markup():
 
 def start_markup(message):
     """
-    Создает и возвращает разметку клавиатуры для выбора действия.
+    Создает и возвращает разметку клавиатуры для начального меню.
 
     :return: объект ReplyKeyboardMarkup
     """
-    user_id = message.chat.id
     try:
+        user_id = message.from_user.id
         order = user_data[user_id]['order']
         basket = len(order.positions)
+        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
+        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
+                   '\U0001F6F5 Посмотреть статус заказа')
+        return markup
     except KeyError:
         basket = 0
-
-    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
-    markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
-               '\U0001F6F5 Посмотреть статус заказа')
-
-    if user.is_admin(user_id):
-        markup.add('\U0001F6E0 Админ панель')
-
-    return markup
+        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
+        markup.add('\U0001F4CB Посмотреть меню', f'\U0001F6D2 Корзина ({str(basket)})',
+                   '\U0001F6F5 Посмотреть статус заказа')
+        return markup
 
 
 def category_markup():
@@ -185,8 +182,7 @@ def command_message(message, bot):
         '/basket': basket_message,
         '/support': support_message,
         '/look_feedback': look_for_feedback,
-        '/start': start_message,
-        '/admin': ad.admin_message
+        '/start': start_message
     }
     if message.text in commands:
         commands[message.text](message, bot)
@@ -204,13 +200,10 @@ def start_perform_actions(message, bot):
         basket_message(message, bot)
 
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
-        sc.status_check(message, bot)
-
-    elif message.text == '\U0001F6E0 Админ панель':
-        ad.admin_message(message, bot)
+        bot.send_message(message.chat.id, 'Функция статус заказа')
 
     else:
-        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/admin', '/support']:
+        if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
             command_message(message, bot)
         # else:
         # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
@@ -282,9 +275,10 @@ def dish_selected(message, bot):
                     caption=caption,
                     reply_markup=dish_markup(message, dish_id)
                 )
+            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
         else:
             bot.send_message(message.chat.id, 'Блюдо не найдено. Попробуйте ещё раз.')
-        bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
 
 
 def add_to_order(message, dish_id, order, bot):
@@ -324,7 +318,6 @@ def process_amount(message, dish_id, order, bot):
         bot.send_message(message.chat.id, "Введите корректное количество.")
     db.close()
 
-
 def order_markup():
     """Creates and returns the inline keyboard markup with options for a cart."""
     markup = types.InlineKeyboardMarkup()
@@ -349,8 +342,14 @@ def basket_markup(order):
     return markup
 
 
+def change_markup():
+    markup = fb.feedback_score_markup()
+
+    return markup
+
+
 def show_order(message, bot, order):
-    db = Database('EasyEats.db')
+
 
     if not order.positions:
         bot.send_message(message.chat.id, "Ваша корзина пуста.")
@@ -358,15 +357,24 @@ def show_order(message, bot, order):
         order_details = ""
         ind = 0
         for item in order.positions:
+            db = Database('EasyEats.db')
             menu_item = db.get_dish(item.dish_id)
+            db.close()
             dish_name = menu_item[2]
             ind += 1
             # dish_name = db.cursor.execute("SELECT dish_name FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
             order_details += (f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. "
                               f"(Итого: {item.total_price} руб.)\n")
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
+
+        # bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        msg = bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        #bot.register_next_step_handler(msg, lambda m: check_address(m, bot, order))
+        bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
         bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
     db.close()
+
 
 
 def process_delete(message, bot, order):
@@ -394,8 +402,7 @@ def process_change(message, bot, order):
     try:
         pos_id = int(message.text[0])
         pos_for_change = order.positions[pos_id - 1]
-        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:",
-                         reply_markup=fb.feedback_score_markup())
+        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:", reply_markup=change_markup())
         bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
 
     except ValueError:
@@ -432,59 +439,104 @@ def display_order(message, bot):
     except KeyError:
         bot.send_message(message.chat.id, "Ваша корзина пуста.")
 
+def address_markup():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("да", "нет")
+    return markup
 
-def check_adress(message, bot):
-    user_id = message.from_user.id
+def check_address(message, bot, user_id):
+    print('check_adress is running')
+    #user_id = message.from_user.id   # т.к. этот user_id на самом деле из call.message, а не message
     order = user_data[user_id]['order']
     user_record = get_user(user_id)
     if user_record:
         order.address = user_record[3]
     if not order.address:
-        request_address(message, bot)
+        #request_address(message, bot, user_id)
+        msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:")
+        bot.register_next_step_handler(msg, lambda m: save_address(m, bot, user_id))
     else:
         msg = bot.send_message(message.chat.id,
-                               f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
+                               f'Ваш сохраненный адрес: {order.address}. Хотите использовать его? (да/нет)',
                                reply_markup=address_markup())
-        # bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+        bot.register_next_step_handler(msg, lambda m: handle_address_confirmation(m, bot, user_id))
 
+# Функция для обработки ответа пользователя
+def handle_address_confirmation(message, bot, user_id):
+    if message.text.lower() in ['да']:
+        bot.send_message(message.chat.id, "Адрес использован для доставки.")
+        choose_payment_method(message, bot, user_id)
+    else:
+        #bot.register_next_step_handler(message, lambda m: request_address(m, bot, user_id))
+        request_address(message, bot, user_id)
 
-def address_markup():
-    """Creates and returns the inline keyboard markup for entering the delivery address."""
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    markup.add(types.KeyboardButton('Введите адрес доставки'))
-    return markup
-
-
-def request_address(message, bot):
+def request_address(message, bot, user_id):
     """Function to request delivery address from the user."""
-    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:", reply_markup=address_markup())
-    bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+    msg = bot.send_message(message.chat.id, "Пожалуйста, введите адрес доставки заказа:")
+    bot.register_next_step_handler(msg, lambda m: save_address(m, bot, user_id))
 
 
-def save_address(message, bot):
+def save_address(message, bot, user_id):
     """Function to save user's delivery address."""
-    user_id = message.from_user.id
+    #ser_id = message.from_user.id
     address = message.text
-    # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
+    user_data[user_id]['order'].address = address
+
+    # Сохраняем адрес в базе данных        --- тут не сохраняем (Maria)
+    # db = Database('EasyEats.db')
+    # db.update_user_address(user_id, address)
+    # db.close()
+
+    # msg = bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+    # bot.register_next_step_handler(msg, lambda m: choose_payment_method(m, bot, user_id))
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+    choose_payment_method(message, bot, user_id)
 
+# Функция для выбора формы оплаты
+def choose_payment_method(message, bot, user_id):
+    print('choose_payment_method is running')
+    #user_id = message.from_user.id
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    cash_button = types.KeyboardButton('Наличные')
+    card_button = types.KeyboardButton('Банковская карта')
+    markup.add(cash_button, card_button)
 
-def finalize_order(message, bot):
-    user_id = message.from_user.id
+    msg = bot.send_message(message.chat.id, "Пожалуйста, выберите форму оплаты:", reply_markup=markup)
+    bot.register_next_step_handler(msg, lambda m: process_payment_method(m, bot, user_id))
+
+# Обработчик выбора формы оплаты
+def process_payment_method(message, bot, user_id):
+    #user_id = message.from_user.id
+    payment_method = message.text
+    if payment_method in ['Наличные', 'Банковская карта']:
+        user_data[user_id]['payment_method'] = payment_method
+
+        #msg = bot.send_message(message.chat.id, f"Выбрана форма оплаты: {payment_method}")
+        #bot.register_next_step_handler(msg, lambda m: finalize_order(m, bot, user_id))
+        bot.send_message(message.chat.id, f"Выбрана форма оплаты: {payment_method}")
+        finalize_order(message, bot, user_id)
+
+    else:
+        bot.send_message(message.chat.id, "Выберите корректную форму оплаты.")
+        choose_payment_method(message, bot, user_id)
+
+def finalize_order(message, bot, user_id):
+    print('finalize_order is running')
+    #user_id = message.from_user.id
     order = user_data[user_id]['order']
-    order.status = 'in process'  # ?????? или оплачен или в обработке или что?
+    order.status = 'in process'   # ?????? или оплачен или в обработке или что?
     db = Database('EasyEats.db')
     db.save_order(order)  # сохраняем заголовок и позиции в базе данных
     db.close()
-    save_user(order)  # сохраняем данные пользователя в базе данных
+    save_user(order)      # сохраняем данные пользователя в базе данных
     order.clear()
-    bot.send_message(message.chat.id, "Ваш заказ принят. Спасибо за покупку!")
-    # Уведомление админа о новом заказе
-    admin_id = user.get_admin_id()
-    bot.send_message(admin_id, "Поступил новый заказ. Проверьте админ-панель для получения деталей.")
-    try:
-        user_id = message.from_user.id
-        order = user_data[user_id]['order']
-        show_order(message, bot, order)
-    except KeyError:
-        bot.send_message(message.chat.id, "Ваша корзина пуста.")
+    msg = bot.send_message(message.chat.id, 'Ваш заказ принят. Спасибо за покупку!',
+                           reply_markup=start_markup(message))
+    bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
+    # try:
+    #     #user_id = message.from_user.id
+    #     order = user_data[user_id]['order']
+    #     show_order(message, bot, order)
+    # except KeyError:
+    #     bot.send_message(message.chat.id, "Ваша корзина пуста.")

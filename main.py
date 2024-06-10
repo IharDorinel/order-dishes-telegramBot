@@ -1,6 +1,5 @@
 import telebot
 import feedback as fb
-import admin_func as ad
 import handlers
 from database import user, order as ord
 
@@ -8,7 +7,9 @@ from database import user, order as ord
 from telebot import types
 
 
-bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
+
+bot = telebot.TeleBot('Your_token')
+
 
 
 commands = [
@@ -16,8 +17,7 @@ commands = [
     telebot.types.BotCommand('/basket', 'Корзина'),
     telebot.types.BotCommand('/feedback', 'Оставить отзыв'),
     telebot.types.BotCommand('/look_feedback', 'Посмотреть отзывы о ресторане'),
-    telebot.types.BotCommand('/support', 'Обратиться в поддержку'),
-    telebot.types.BotCommand('/admin', 'Администратор')
+    telebot.types.BotCommand('/support', 'Обратиться в поддержку')
 ]
 
 bot.set_my_commands(commands)
@@ -46,12 +46,6 @@ def look_feedback_message(message):
 @bot.message_handler(commands=['support'])
 def support_message(message):
     handlers.support_message(message, bot)
-
-
-@bot.message_handler(commands=['admin'])
-def admin_message(message):
-    ad.admin_message(message, bot)
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('category:'))
@@ -110,16 +104,20 @@ def clear_cart(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
     order.clear()
-
     bot.send_message(call.message.chat.id, "Корзина очищена", reply_markup=handlers.start_markup(call.message))
+    # handlers.basket_message(call.message, bot)
+    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))
 def checkout(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
-    # order.clear() -- не забыть в функции которая будет финализировать заказ очистить корзину в конце
-
+    handlers.check_address(call.message, bot, user_id)
+    #bot.register_next_step_handler(call.message, lambda m: handlers.check_address(m, bot, user_id))
+    #bot.send_message(call.message.chat.id, "Ваш заказ оформлен. Спасибо за покупку!")
+    #handlers.basket_message(call.message, bot)
+    #bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 # Обработчик команды /confirm для подтверждения заказа
 @bot.message_handler(commands=['confirm'])

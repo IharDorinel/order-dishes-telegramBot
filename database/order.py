@@ -45,7 +45,7 @@ class Database:
         return self.cursor.fetchone()
 
     def save_order(self, order):
-        sql = '''INSERT INTO order_header (user_id, total_price, address, status, create_at, update_at, payment_method)
+        sql = '''INSERT INTO order_header (user_id, total_price, adress, status, create_at, update_at, payment_method)
                      VALUES (?, ?, ?, ?, ?, ?, ?)'''
         order.create_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время создания заказа
         order.update_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Дата и время изменения заказа
@@ -82,7 +82,7 @@ class Order:
         self.user_telegram = user_telegram
         self.positions = []
         self.total_price = 0
-        self.adress = ''
+        self.address = ''
         self.status = 'Новый'
         self.payment_method = ''
         self.create_at = datetime.datetime.now().strftime(
@@ -92,6 +92,9 @@ class Order:
     def clear(self):
         self.positions = []
         self.total_price = 0
+        self.payment_method = ''
+        self.address = ''
+        self.status = 'Новый'
 
     def add_position(self, position):
         self.positions.append(position)
