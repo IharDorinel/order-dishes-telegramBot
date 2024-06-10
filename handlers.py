@@ -363,7 +363,9 @@ def show_order(message, bot, order):
             order_details += (f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. "
                               f"(Итого: {item.total_price} руб.)\n")
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
-        bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        # bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        msg = bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+        bot.register_next_step_handler(msg, lambda m: check_adress(m, bot, order))
     # db.close()
 
 
@@ -454,7 +456,7 @@ def handle_address_confirmation(message, bot):
     if message.text.lower() in ['да']:
         bot.send_message(message.chat.id, "Адрес использован для доставки.")
     else:
-        request_address(message, bot)
+        bot.register_next_step_handler(message, lambda m: request_address(m, bot))
 
 def request_address(message, bot):
     """Function to request delivery address from the user."""
@@ -475,9 +477,10 @@ def save_address(message, bot):
     # Сохраняем адрес в базе данных
     db = Database('EasyEats.db')
     db.update_user_address(user_id, address)
+    db.close()
 
-    bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
-    choose_payment_method(message, bot)  # Вызывание функции выбора формы оплаты после сохранения адреса
+    msg = bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
+    bot.register_next_step_handler(msg, lambda m: choose_payment_method(m, bot))
 
 # Функция для выбора формы оплаты
 def choose_payment_method(message, bot):
@@ -486,7 +489,9 @@ def choose_payment_method(message, bot):
     cash_button = types.KeyboardButton('Наличные')
     card_button = types.KeyboardButton('Банковская карта')
     markup.add(cash_button, card_button)
-    bot.send_message(message.chat.id, "Пожалуйста, выберите форму оплаты:", reply_markup=markup)
+
+    msg = bot.send_message(message.chat.id, "Пожалуйста, выберите форму оплаты:", reply_markup=markup)
+    bot.register_next_step_handler(msg, lambda m: process_payment_method(m, bot))
 
 # Обработчик выбора формы оплаты
 def process_payment_method(message, bot):
@@ -494,8 +499,10 @@ def process_payment_method(message, bot):
     payment_method = message.text
     if payment_method in ['Наличные', 'Банковская карта']:
         user_data[user_id]['payment_method'] = payment_method
-        bot.send_message(message.chat.id, f"Форма оплаты выбрана: {payment_method}")
-        finalize_order(message, bot)  # Перенаправление к финализации заказа после выбора формы оплаты
+
+        msg = bot.send_message(message.chat.id, f"Выбрана форма оплаты: {payment_method}")
+        bot.register_next_step_handler(msg, lambda m: finalize_order(m, bot))
+
     else:
         bot.send_message(message.chat.id, "Выберите корректную форму оплаты.")
         choose_payment_method(message, bot)

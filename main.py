@@ -112,9 +112,11 @@ def checkout(call):
     user_id = call.from_user.id
     order = ord.user_data[user_id]['order']
     order.clear()
+    # handlers.check_adress(call.message, bot)
+    bot.register_next_step_handler(call.message, lambda m: handlers.check_adress(m, bot))
     bot.send_message(call.message.chat.id, "Ваш заказ оформлен. Спасибо за покупку!")
-    # handlers.basket_message(call.message, bot)
-    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
+    #handlers.basket_message(call.message, bot)
+    #bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 # Обработчик команды /confirm для подтверждения заказа
 @bot.message_handler(commands=['confirm'])
