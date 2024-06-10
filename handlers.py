@@ -5,6 +5,7 @@ from database.order import *
 from database.user import *
 from telebot import types
 import feedback as fb
+import staus_check as sc
 
 
 # Глобальная переменная для хранения количества товаров в корзине
@@ -198,7 +199,7 @@ def start_perform_actions(message, bot):
         basket_message(message, bot)
 
     elif message.text == '\U0001F6F5 Посмотреть статус заказа':
-        bot.send_message(message.chat.id, 'Функция статус заказа')
+        sc.staus_check(message, bot)
 
     else:
         if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/support']:
@@ -273,10 +274,9 @@ def dish_selected(message, bot):
                     caption=caption,
                     reply_markup=dish_markup(message, dish_id)
                 )
-            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
         else:
             bot.send_message(message.chat.id, 'Блюдо не найдено. Попробуйте ещё раз.')
-            bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
+        bot.register_next_step_handler(message, lambda m: dish_selected(m, bot))
 
 
 def add_to_order(message, dish_id, order, bot):
@@ -316,6 +316,7 @@ def process_amount(message, dish_id, order, bot):
         bot.send_message(message.chat.id, "Введите корректное количество.")
     db.close()
 
+
 def order_markup():
     """Creates and returns the inline keyboard markup with options for a cart."""
     markup = types.InlineKeyboardMarkup()
@@ -337,12 +338,6 @@ def basket_markup(order):
         print(order.dish_id)
         markup.add(f'{ind}. {dish_name}')
     db.close()
-    return markup
-
-
-def change_markup():
-    markup = fb.feedback_score_markup()
-
     return markup
 
 
@@ -391,7 +386,8 @@ def process_change(message, bot, order):
     try:
         pos_id = int(message.text[0])
         pos_for_change = order.positions[pos_id - 1]
-        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:", reply_markup=change_markup())
+        bot.send_message(message.chat.id, "Выберите новое количество или введите свое:",
+                         reply_markup=fb.feedback_score_markup())
         bot.register_next_step_handler(message, lambda m: process_change_amount(m, bot, order, pos_for_change))
 
     except ValueError:
@@ -428,6 +424,7 @@ def display_order(message, bot):
     except KeyError:
         bot.send_message(message.chat.id, "Ваша корзина пуста.")
 
+
 def check_adress(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']
@@ -437,9 +434,11 @@ def check_adress(message, bot):
     if not order.address:
         request_address(message, bot)
     else:
-        msg = bot.send_message(message.chat.id, f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
+        msg = bot.send_message(message.chat.id,
+                               f'Ваш сохраненный адрес: {order.adress}. Хотите использовать его? (да/нет)',
                                reply_markup=address_markup())
-        #bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+        # bot.register_next_step_handler(msg, lambda m: save_address(m, bot))
+
 
 def address_markup():
     """Creates and returns the inline keyboard markup for entering the delivery address."""
@@ -461,14 +460,15 @@ def save_address(message, bot):
     # В этой функции вы можете сохранить адрес пользователя в базе данных или как-то еще его обработать
     bot.send_message(message.chat.id, f"Адрес доставки сохранен: {address}")
 
+
 def finalize_order(message, bot):
     user_id = message.from_user.id
     order = user_data[user_id]['order']
-    order.status = 'in process'   # ?????? или оплачен или в обработке или что?
+    order.status = 'in process'  # ?????? или оплачен или в обработке или что?
     db = Database('EasyEats.db')
     db.save_order(order)  # сохраняем заголовок и позиции в базе данных
     db.close()
-    save_user(order)      # сохраняем данные пользователя в базе данных
+    save_user(order)  # сохраняем данные пользователя в базе данных
     order.clear()
     bot.send_message(message.chat.id, "Ваш заказ принят. Спасибо за покупку!")
     try:
