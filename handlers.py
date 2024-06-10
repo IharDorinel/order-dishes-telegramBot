@@ -4,7 +4,8 @@ from database import menu, user
 from database.order import *
 from database.user import *
 from telebot import types
-from feedback as fb
+import feedback as fb
+from telebot import types
 
 
 
@@ -427,6 +428,11 @@ def display_order(message, bot):
         show_order(message, bot, order)
     except KeyError:
         bot.send_message(message.chat.id, "Ваша корзина пуста.")
+
+def address_markup():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("да", "нет")
+    return markup
 
 def check_adress(message, bot):
     user_id = message.from_user.id
