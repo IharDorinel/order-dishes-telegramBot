@@ -5,7 +5,7 @@ from database import user, order as ord
 import admin_func as ad
 
 
-bot = telebot.TeleBot('7367715020:AAEZortk_qDiDFA28I7LfAYnnbLsX1loE48')
+bot = telebot.TeleBot('Your_Token')
 
 
 
