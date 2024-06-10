@@ -62,7 +62,7 @@ def feedback_message(message, bot):
         bot.register_next_step_handler(message, lambda m: fb.choose_category(m, bot))
     else:
 
-        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еше не '
+        bot.send_message(message.chat.id, 'Вы не можете оставлять отзыв если еще не '
                                           'пользовались нашим сервисом. Мы будем рады если вы '
                                           'воспользуетесь нашим сервисом.', reply_markup=start_markup(message))
         bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
@@ -316,7 +316,7 @@ def process_amount(message, dish_id, order, bot):
             bot.send_message(message.chat.id, "Блюдо не найдено.")
     except ValueError:
         bot.send_message(message.chat.id, "Введите корректное количество.")
-
+    db.close()
 
 def order_markup():
     """Creates and returns the inline keyboard markup with options for a cart."""
@@ -338,6 +338,7 @@ def basket_markup(order):
         ind += 1
         print(order.dish_id)
         markup.add(f'{ind}. {dish_name}')
+    db.close()
     return markup
 
 
@@ -365,10 +366,14 @@ def show_order(message, bot, order):
             order_details += (f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. "
                               f"(Итого: {item.total_price} руб.)\n")
         order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
+
         # bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
         msg = bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
         #bot.register_next_step_handler(msg, lambda m: check_address(m, bot, order))
         bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
+        bot.send_message(message.chat.id, order_details, reply_markup=order_markup())
+    db.close()
 
 
 
