@@ -9,7 +9,7 @@ from telebot import types
 
 
 
-bot = telebot.TeleBot('6619304848:AAHLbyN5yN96nyYzGsL7PV8vo8uCuy_OTBc')
+bot = telebot.TeleBot('YOUR_TOKEN_HERE')
 
 
 
