@@ -488,13 +488,48 @@ def process_payment_method(message, bot, user_id):
         choose_payment_method(message, bot, user_id)
 
 def finalize_order(message, bot, user_id):
+
+    #user_id = message.from_user.id
+
+
     order = user_data[user_id]['order']
     order.status = 'Обрабатывается'
     db = Database('EasyEats.db')
     db.save_order(order)  # сохраняем заголовок и позиции в базе данных
     db.close()
-    save_user(order)      # сохраняем данные пользователя в базе данных
+    save_user(order)
+    message_to_admin(message, bot, order)
     order.clear()
     msg = bot.send_message(message.chat.id, 'Ваш заказ принят. Спасибо за покупку!',
                            reply_markup=start_markup(message))
+
     bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
+
+def message_to_admin(message, bot, order):
+    admin_id = user.get_admin_id()
+    order_details = ""
+    ind = 0
+    for item in order.positions:
+        db = Database('EasyEats.db')
+
+        menu_item = db.get_dish(item.dish_id)
+        db.close()
+        order_id = get_max_order_id()
+        dish_name = menu_item[2]
+        ind += 1
+        # dish_name = db.cursor.execute("SELECT dish_name FROM menu WHERE dish_id = ?", (dish_id,)).fetchone()
+        order_details += (f"{ind}. {dish_name} x{item.amount} - {item.price} руб. за шт. "
+                          f"(Итого: {item.total_price} руб.)\n")
+    order_details += f"\nОбщая сумма заказа: {order.total_price} руб."
+
+    bot.send_message(admin_id, f"Принят новый заказ, No {order_id}, user_id: {order.user_telegram} \n\n"
+                               f"Адрес доставки: {order.address}, форма оплаты: {order.payment_method}\n\n"
+                               f"{order_details}")
+
+    #     #user_id = message.from_user.id
+    #     order = user_data[user_id]['order']
+    #     show_order(message, bot, order)
+    # except KeyError:
+    #     bot.send_message(message.chat.id, "Ваша корзина пуста.")
+
+

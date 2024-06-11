@@ -124,3 +124,15 @@ def update_order_status(order_id, new_status):
     cursor.execute("UPDATE order_header SET status = ? WHERE order_id = ?", (new_status, order_id))
     db.commit()
     db.close()
+
+def get_max_order_id():
+    try:
+        db = sqlite3.connect('EasyEats.db')
+        cursor = db.cursor()
+        cursor.execute("SELECT MAX(order_id) FROM order_header")
+        result = cursor.fetchone()
+        db.close()
+        return result[0] if result else None
+    except sqlite3.Error as e:
+        print(f"Ошибка при работе с базой данных: {e}")
+        return None
