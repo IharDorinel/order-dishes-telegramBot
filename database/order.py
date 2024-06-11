@@ -70,10 +70,6 @@ class Database:
         self.conn.commit()
 
 
-# Инициализация базы данных   --- переносим в те функции где используем, чтобы потом закрыть курсор
-# db = Database('EasyEats.db')
-
-
 # Класс для хранения состояния текущего заказа
 class Order:
     def __init__(self, user_telegram):  #

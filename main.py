@@ -3,13 +3,9 @@ import feedback as fb
 import handlers
 from database import user, order as ord
 import admin_func as ad
+from config import API_TOKEN
 
-
-from telebot import types
-
-
-
-bot = telebot.TeleBot('YOUR_TOKEN_HERE')
+bot = telebot.TeleBot(API_TOKEN)
 
 
 
@@ -112,23 +108,12 @@ def clear_cart(call):
     order = ord.user_data[user_id]['order']
     order.clear()
     bot.send_message(call.message.chat.id, "Корзина очищена", reply_markup=handlers.start_markup(call.message))
-    # handlers.basket_message(call.message, bot)
-    # bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('checkout'))
 def checkout(call):
     user_id = call.from_user.id
-    order = ord.user_data[user_id]['order']
     handlers.check_address(call.message, bot, user_id)
-    #bot.register_next_step_handler(call.message, lambda m: handlers.check_address(m, bot, user_id))
-    #bot.send_message(call.message.chat.id, "Ваш заказ оформлен. Спасибо за покупку!")
-    #handlers.basket_message(call.message, bot)
-    #bot.register_next_step_handler(call.message, lambda m: handlers.start_perform_actions(m, bot))
 
-# Обработчик команды /confirm для подтверждения заказа
-@bot.message_handler(commands=['confirm'])
-def confirm_order(message):
-    bot.send_message(message.chat.id, "Ваш заказ подтвержден. Спасибо за покупку!")
 
 bot.polling(none_stop=True)
