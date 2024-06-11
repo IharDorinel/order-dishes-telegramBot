@@ -3,9 +3,9 @@ import feedback as fb
 import handlers
 from database import user, order as ord
 import admin_func as ad
+from config import API_TOKEN
 
-
-bot = telebot.TeleBot('Your_Token')
+bot = telebot.TeleBot(API_TOKEN)
 
 
 
