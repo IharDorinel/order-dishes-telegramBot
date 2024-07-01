@@ -2,11 +2,6 @@ import telebot
 import sqlite3
 from telebot import types
 
-# Telegram Bot Token
-API_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-
-# Создаем объект бота
-bot = telebot.TeleBot(API_TOKEN)
 
 # Класс для работы с базой данных
 class Database:

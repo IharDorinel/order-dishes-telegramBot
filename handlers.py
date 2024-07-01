@@ -210,15 +210,6 @@ def start_perform_actions(message, bot):
     else:
         if message.text in ['/start', '/basket', '/feedback', '/look_feedback', '/admin', '/support']:
             command_message(message, bot)
-        # else:
-        # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
-        # reply_markup=start_markup(message, bot))
-        # bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
-        # else:
-        # bot.send_message(message.chat.id, 'Неправильная команда. Попробуйте ещё раз.',
-        # reply_markup=start_markup(message, bot))
-        # bot.register_next_step_handler(message, lambda m: start_perform_actions(m, bot))
-
 
 def category_selected(message, bot):
     """
@@ -488,21 +479,16 @@ def process_payment_method(message, bot, user_id):
         choose_payment_method(message, bot, user_id)
 
 def finalize_order(message, bot, user_id):
-
-    #user_id = message.from_user.id
-
-
     order = user_data[user_id]['order']
     order.status = 'Обрабатывается'
     db = Database('EasyEats.db')
     db.save_order(order)  # сохраняем заголовок и позиции в базе данных
     db.close()
     save_user(order)
-    message_to_admin(message, bot, order)
-    order.clear()
     msg = bot.send_message(message.chat.id, 'Ваш заказ принят. Спасибо за покупку!',
                            reply_markup=start_markup(message))
-
+    message_to_admin(message, bot, order)
+    order.clear()
     bot.register_next_step_handler(msg, lambda m: start_perform_actions(m, bot))
 
 def message_to_admin(message, bot, order):
@@ -526,10 +512,5 @@ def message_to_admin(message, bot, order):
                                f"Адрес доставки: {order.address}, форма оплаты: {order.payment_method}\n\n"
                                f"{order_details}")
 
-    #     #user_id = message.from_user.id
-    #     order = user_data[user_id]['order']
-    #     show_order(message, bot, order)
-    # except KeyError:
-    #     bot.send_message(message.chat.id, "Ваша корзина пуста.")
 
 
